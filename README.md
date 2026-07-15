@@ -4,7 +4,7 @@ LifeThread is a planned bilingual AI life-management application for turning any
 
 ## Current repository state
 
-This repository currently contains planning and documentation only. There is no application scaffold, dependency manifest, database, deployment, or runnable product yet. Implementation remains blocked until the completed plan is explicitly approved.
+This repository contains a working local MVP vertical slice. The bilingual workspace, domain/revision engine, deterministic CandidateDelta reconciliation, private local evidence adapter, demo reset/preflight, and responsive browser journey are implemented and verified. Supabase/OpenAI live adapters are present behind fail-fast boundaries and require credentials to activate.
 
 Approved hackathon defaults:
 
@@ -36,6 +36,11 @@ A user supplies an arbitrary goal, not a category. LifeThread proposes a tentati
 
 The MVP does not include public sharing, production-grade authentication, collaboration, external email/calendar actions, background queues, a template library, multiple scenario-specific paths, additional languages, or hidden mocks. Original evidence remains private; AI output cannot directly mutate canonical confirmed state.
 
-## Next gate
+## Verification
 
-Review the documentation and `.omo` plan. Only an explicit instruction to start implementation authorizes application code, dependency installation, database work, deployment, or scaffolding.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (29 tests), `pnpm test:integration`, and `pnpm build` pass.
+- `pnpm test:e2e` passes across desktop, mobile, and tablet (6 tests).
+- `pnpm demo:preflight`, `pnpm demo:reset`, and `pnpm acceptance:audit` pass.
+- Full evidence is recorded in `.omo/evidence/final-verification/summary.md`.
+
+Live Supabase integration requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; live GPT smoke requires `OPENAI_API_KEY`. Missing live credentials fail fast without affecting deterministic local tests.
