@@ -1,6 +1,5 @@
 # LifeThread
-
-LifeThread is a planned bilingual AI life-management application for turning any free-form real-world goal into an editable, evidence-backed living state.
+LifeThread is a general-purpose, bilingual AI life-management application that turns any free-form real-world goal into an editable, evidence-backed living state. The user can enter any goal or task in their own words.
 
 ## Current repository state
 
@@ -44,3 +43,4 @@ The MVP does not include public sharing, production-grade authentication, collab
 - Full evidence is recorded in `.omo/evidence/final-verification/summary.md`.
 
 Live Supabase integration requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; live GPT smoke requires `OPENAI_API_KEY`. Missing live credentials fail fast without affecting deterministic local tests.
+
