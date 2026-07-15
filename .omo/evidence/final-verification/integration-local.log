@@ -1,0 +1,15 @@
+$ pnpm test:integration
+exit=0
+
+> lifethread@0.1.0 test:integration /home/ubuntu/LifeThread
+> tsx scripts/integration/run.ts
+
+
+ RUN  v4.1.10 /home/ubuntu/LifeThread
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:48:49
+   Duration  1.18s (transform 107ms, setup 85ms, import 160ms, tests 30ms, environment 749ms)
+

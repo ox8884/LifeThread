@@ -1,0 +1,6 @@
+$ pnpm lint
+exit=0
+
+> lifethread@0.1.0 lint /home/ubuntu/LifeThread
+> eslint . --max-warnings=0
+

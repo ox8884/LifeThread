@@ -1,0 +1,7 @@
+Command: pnpm exec playwright test e2e/foundation.spec.ts
+Observed: 2026-07-15T16:56-04:00
+Exit: 1
+
+error: unknown command 'test'
+
+PASS as RED: no project Playwright configuration or browser journey existed before implementation.

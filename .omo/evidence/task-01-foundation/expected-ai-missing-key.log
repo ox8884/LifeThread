@@ -1,0 +1,8 @@
+$ env -u OPENAI_API_KEY pnpm ai:smoke
+exit=1
+
+> lifethread@0.1.0 ai:smoke /home/ubuntu/LifeThread
+> tsx scripts/ai/smoke.ts
+
+ ELIFECYCLE  Command failed with exit code 1.
+AI_SMOKE_MISSING_OPENAI_API_KEY

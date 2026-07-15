@@ -1,0 +1,15 @@
+$ pnpm test
+exit=0
+
+> lifethread@0.1.0 test /home/ubuntu/LifeThread
+> vitest run
+
+
+ RUN  v4.1.10 /home/ubuntu/LifeThread
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  17:10:11
+   Duration  1.06s (transform 50ms, setup 91ms, import 80ms, tests 7ms, environment 734ms)
+

@@ -1,0 +1,8 @@
+$ env -u NEXT_PUBLIC_SUPABASE_URL -u SUPABASE_SERVICE_ROLE_KEY LIFETHREAD_LIVE_INTEGRATION=1 pnpm test:integration
+exit=1
+
+> lifethread@0.1.0 test:integration /home/ubuntu/LifeThread
+> tsx scripts/integration/run.ts
+
+ ELIFECYCLE  Command failed with exit code 1.
+INTEGRATION_MISSING NEXT_PUBLIC_SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY

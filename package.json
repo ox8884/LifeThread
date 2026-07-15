@@ -1,0 +1,52 @@
+{
+  "name": "lifethread",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "tsx scripts/integration/run.ts",
+    "test:e2e": "playwright test",
+    "qa:capture": "tsx scripts/qa/capture.ts",
+    "demo:preflight": "tsx scripts/demo/preflight.ts",
+    "demo:reset": "tsx scripts/demo/reset.ts",
+    "ai:smoke": "tsx scripts/ai/smoke.ts",
+    "acceptance:audit": "tsx scripts/acceptance/audit.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.110.6",
+    "next": "16.2.10",
+    "next-intl": "4.13.2",
+    "openai": "6.47.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "jsdom": "29.1.1",
+    "react-grab": "0.1.48",
+    "react-scan": "0.5.7",
+    "tailwindcss": "^4",
+    "tsx": "4.23.1",
+    "typescript": "^5",
+    "vitest": "4.1.10"
+  }
+}

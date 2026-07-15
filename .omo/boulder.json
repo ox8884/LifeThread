@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "active_work_id": "lifethread-mvp-019f6781",
+  "works": {
+    "lifethread-mvp-019f6781": {
+      "work_id": "lifethread-mvp-019f6781",
+      "active_plan": ".omo/plans/lifethread-mvp.md",
+      "plan_name": "lifethread-mvp",
+      "session_ids": [
+        "codex:019f6781-cefd-7720-b4ff-fd1a48b6dd2a"
+      ],
+      "status": "active",
+      "worktree_path": null
+    }
+  }
+}

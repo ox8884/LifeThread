@@ -1,0 +1,13 @@
+
+> lifethread@0.1.0 test:integration /home/ubuntu/LifeThread
+> tsx scripts/integration/run.ts
+
+
+ RUN  v4.1.10 /home/ubuntu/LifeThread
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:55:22
+   Duration  1.17s (transform 103ms, setup 90ms, import 158ms, tests 29ms, environment 737ms)
+

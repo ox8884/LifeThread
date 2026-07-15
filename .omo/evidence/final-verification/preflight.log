@@ -1,0 +1,7 @@
+$ pnpm demo:preflight
+exit=0
+
+> lifethread@0.1.0 demo:preflight /home/ubuntu/LifeThread
+> tsx scripts/demo/preflight.ts
+
+DEMO_PREFLIGHT_OK mode=local adapter=recorded_fixture actor=demo_user thread=thread_f2989eabeacbdf7a version=2

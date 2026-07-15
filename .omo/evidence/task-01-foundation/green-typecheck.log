@@ -1,0 +1,6 @@
+$ pnpm typecheck
+exit=0
+
+> lifethread@0.1.0 typecheck /home/ubuntu/LifeThread
+> tsc --noEmit
+

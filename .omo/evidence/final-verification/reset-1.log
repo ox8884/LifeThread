@@ -1,0 +1,7 @@
+$ pnpm demo:reset
+exit=0
+
+> lifethread@0.1.0 demo:reset /home/ubuntu/LifeThread
+> tsx scripts/demo/reset.ts
+
+DEMO_RESET_OK adapter=recorded_fixture actor=demo_user thread=thread_f2989eabeacbdf7a version=2
