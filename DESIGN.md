@@ -1,60 +1,78 @@
-# LifeThread MVP Design Contract
+# LifeThread Action-First Design Contract
 
 ## 1. Product intent
 
-LifeThread is a private, evidence-aware workspace for turning an open-ended goal into a living plan. The interface should feel calm and exact: one canonical thread, one clearly dominant next action, and enough provenance to understand why the state changed.
+LifeThread is a private workspace that turns an open-ended goal into a living plan. A person should understand the page in seconds: what the goal is, what to do now, what happens after completion, and which AI suggestions still need review. The primary flow is action, completion, then an optional update.
 
-## 2. Visual direction
+## 2. Approved visual direction
 
-Use a warm, paper-like light surface with restrained graphite text and one violet action accent. The visual language combines a minimalist base with Linear-like operational density: compact rows, stable first-class objects, quiet status metadata, and progressive disclosure. It must not imitate a generic analytics dashboard or use decorative gradients, glass effects, oversized marketing type, or card grids without hierarchy.
+The interface uses a warm paper canvas, soft white surfaces, graphite text, and one deep green action color. It should feel calm, editorial, and practical rather than like an analytics dashboard. Hierarchy comes from spacing, type, and surface contrast—not decorative gradients, glass effects, oversized marketing type, floating side rails, or repeated card grids.
 
 ## 3. Information architecture
 
-- Global rail: product identity, thread navigation, locale switch, privacy and adapter labels.
-- Thread header: goal, revision/version, status, and last meaningful change.
-- Primary column: current state, adaptive plan, tasks, timeline, evidence, and communication draft.
-- Context rail: dominant next action, open loops, deadlines, risks, conflicts, and limitations.
-- Mobile: the context rail follows the thread header so the next action remains above supporting history.
+The page follows one document scroll with this fixed reading order:
 
-Every task, evidence item, revision, and conflict is a stable object in the domain. The UI exposes these objects directly instead of hiding them in transient modals.
+1. Compact product header with locale navigation and truthful private-demo status.
+2. Thread overview with goal, recency, and overall progress.
+3. One dominant `Now` action with immediate completion and an optional evidence update.
+4. A compact count and preview of AI changes that still need review.
+5. The remaining plan as simple ordered rows.
+6. Evidence, facts, history, drafts, limitations, and technical metadata under progressive disclosure.
+
+The next action remains above plan details at desktop, tablet, and phone widths. Thread IDs, versions, checksums, confidence values, and source locators never compete with the primary action.
 
 ## 4. Tokens
 
-- Canvas: `#f4f2ed`; panel: `#fcfbf8`; inset: `#f0eee8`.
-- Ink: `#201f22`; muted ink: `#69666f`; borders: `#dedbd4`.
-- Action: `#6651c7`; action hover: `#5540b5`; focus ring: `#8d7be0`.
-- Positive: `#247358`; warning: `#9b6519`; danger: `#a63d46`; proposed: `#765aa6`.
-- Type: Geist Sans for UI and Geist Mono for identifiers, revisions, and source locators.
-- Radius: 6px controls, 10px panels. Shadows are reserved for menus and focused overlays.
-- Spacing follows a 4px base; desktop rows are intentionally compact while touch targets remain at least 44px.
+- Canvas: `#f3f0e8`; surface: `#fffdf8`; soft surface: `#f7f3e9`; inset: `#ece7dc`.
+- Ink: `#1f2923`; muted ink: `#657068`; quiet ink: `#8a918b`; border: `#d8d4c9`.
+- Action: `#174f3b`; hover: `#0f3f2e`; focus: `#4f806d`; action tint: `#e4eee8`.
+- Warm review: `#9b6428`; review tint: `#f7ead8`; danger: `#9f443c`; positive: `#247056`.
+- Type: Geist Sans for interface text and Geist Mono only inside technical disclosure.
+- Radius: 8px controls, 14px primary surfaces, 10px secondary surfaces.
+- Spacing: 4px base with generous section separation and compact list rows.
+- Shadow: none for normal surfaces; a restrained shadow is allowed only for temporary menus or focused overlays.
 
-## 5. Components and states
+## 5. Named primitives and states
 
-- Buttons: primary only for the current action; secondary and quiet controls for accept, reject, restore, and expand.
-- Badges: status, origin, confirmation, adapter, privacy, and draft/not-sent are text-first and never color-only.
-- Task rows: checkbox/status control, title, priority, origin, and optional citation disclosure.
-- Evidence rows: ingestion state, checksum fragment, locator, retry state, and source link.
-- State sections: explicit empty, loading, failed, retryable, proposed, confirmed, conflicted, tombstoned, and stale-version states.
-- Draft composer: selected locale and revision with a permanent “draft · not sent” label and no send control.
+- `WorkspaceHeader`: product identity, locale links, and private-demo disclosure.
+- `ThreadOverview`: goal, current status, last update, and progress meter.
+- `NextActionCard`: `Now` label, one task, one primary `Done` control, help disclosure, and optional quick update.
+- `CandidateReview`: proposed tasks, unconfirmed facts, and unresolved conflicts excluding the current action.
+- `PlanPanel`: ordered task rows with status and origin; editing, rejection, deletion, restoration, and provenance live in each row's disclosure.
+- `ThreadDetails`: native disclosure groups for evidence, facts, conflicts, communication drafts, history, limitations, and technical details.
 
-## 6. Interaction and accessibility
+Required states are empty, active, proposed, completed, blocked, waiting, overdue, rejected, conflicted, tombstoned, stale-version, and recoverable failure. Status is always expressed with text, never color alone.
 
-Keyboard focus is always visible. Native controls are preferred. Status and mutation results use polite live regions; failures remain visible until dismissed or retried. CJK text wraps naturally without fixed-height containers. Motion is limited to short opacity/position transitions and respects reduced-motion preferences. Locale switching is navigational only and never mutates the canonical thread.
+## 6. Interaction contract
 
-## 7. Responsive behavior
+- Selecting `Done` on a proposed task completes it immediately and records that user action as explicit confirmation without changing its original source type.
+- Completion refreshes the canonical thread and reveals the next actionable task.
+- Adding a note or evidence after completion is optional and uses the existing evidence action.
+- AI-created tasks and facts remain visibly proposed or unconfirmed until a person accepts, confirms, rejects, or completes them.
+- Locale switching is navigational only and cannot fork or mutate canonical state.
+- Communication remains a generated draft with a permanent `Not sent` label; there is no send action.
 
-- Under 720px: one column, compact rail header, horizontally scrollable tabs only where unavoidable, 16px gutters.
-- 720–1099px: one primary column with the next-action panel near the top and a two-column summary grid.
-- 1100px and above: 232px navigation rail, flexible content column, 320px context rail; content max-width remains readable.
+## 7. Scroll and responsive behavior
 
-## 8. Safety and truthfulness
+The browser document owns vertical scrolling. Panels must not create nested vertical scroll regions and must not use fixed content heights.
 
-The local deterministic adapter is persistently labeled “Recorded AI fixture · local private demo.” The workspace also states “Private demo · no public sharing” and drafts say “Not sent.” Errors never print goal/evidence content. High-stakes domains show a limitation notice and require the operator to verify important facts.
+- Above 900px: overview and action/review areas use two columns; the primary action receives the wider column.
+- 641–900px: every major area becomes one column while preserving the same reading order.
+- 640px and below: 12px page gutters, compact header controls, full-width primary action, and 44px minimum touch targets.
+- Text wraps naturally in Korean and English; `min-width: 0`, `overflow-wrap: anywhere`, and content-driven heights prevent CJK clipping.
+
+## 8. Accessibility
+
+Use semantic headings, landmarks, forms, labels, buttons, lists, and native `details`/`summary`. Keyboard focus is always visible. Every interactive control has a minimum 44px target. Progress includes readable text in addition to its visual meter. Mutation results use polite live regions and failures remain visible. Motion is functional, brief, and disabled when `prefers-reduced-motion` is set.
+
+## 9. Truthfulness and accepted debt
+
+The experience is persistently labeled as a private local demo using a recorded deterministic AI fixture. It does not imply public sharing, production authentication, collaboration, live autonomous execution, or external message sending. High-stakes information remains subject to operator verification.
+
+Accepted MVP debt: one demo user, one canonical thread, local recorded AI output, no public sharing, and no production-grade file upload pipeline. Those limitations belong in secondary disclosure, not in the primary task flow.
 
 ## Research log
 
-- Lazyweb screenshot MCP was unavailable in this environment; no Lazyweb reference was treated as verified.
-- Public reference searches reviewed Linear issue-detail examples and Notion project/task tables on 2026-07-15. Adopted: stable object pages, visible properties/history, compact task rows, restrained hierarchy, and multiple views over the same data. Rejected: dense spreadsheet columns as the default, dark-only styling, and generic team/assignee mechanics outside the single-user MVP.
-- Claude was shortlisted for calm language and disclosure patterns, but the product needs stronger state density than a chat-first surface.
-- Imagen/image generation was intentionally skipped: LifeThread is an operational workspace with no expressive imagery requirement, and generated artwork would not improve the evidence/state relationships.
-
+- On 2026-07-15 the user approved the action-first option A in the visual companion: one dominant action, immediate completion, optional update, and review-before-apply AI changes.
+- The approved reference was implemented as a warm-paper/deep-green operational workspace; generated imagery was intentionally skipped because it would not clarify task, evidence, or state relationships.
+- Stable object identity, revision history, citations, and optimistic concurrency from the prior contract remain product requirements, but their technical representation moved behind progressive disclosure.

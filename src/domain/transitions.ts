@@ -3,7 +3,7 @@ import type { Task } from "@/domain/entities";
 import type { CanonicalStatus } from "@/domain/status";
 
 const allowedTransitions: Readonly<Record<CanonicalStatus, readonly CanonicalStatus[]>> = {
-  proposed: ["pending", "rejected"],
+  proposed: ["pending", "completed", "rejected"],
   pending: ["in_progress", "waiting", "blocked", "completed", "cancelled"],
   in_progress: ["waiting", "blocked", "completed", "cancelled"],
   waiting: ["in_progress", "blocked", "completed", "overdue", "cancelled"],
@@ -35,15 +35,16 @@ export function transitionTask(
       if (!allowedTransitions[task.status].includes(command.status)) {
         return { kind: "rejected", reason: "invalid_transition" };
       }
-      const acceptingProposal = task.status === "proposed" && command.status === "pending";
+      const confirmingProposal = task.status === "proposed"
+        && (command.status === "pending" || command.status === "completed");
       return {
         kind: "applied",
         task: {
           ...task,
           status: command.status,
-          user_confirmed: task.user_confirmed || acceptingProposal,
-          confirmed_by: acceptingProposal ? "demo_user" : task.confirmed_by,
-          confirmed_at: acceptingProposal ? command.occurred_at : task.confirmed_at,
+          user_confirmed: task.user_confirmed || confirmingProposal,
+          confirmed_by: confirmingProposal ? "demo_user" : task.confirmed_by,
+          confirmed_at: confirmingProposal ? command.occurred_at : task.confirmed_at,
           updated_at: command.occurred_at,
         },
       };

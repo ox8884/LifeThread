@@ -160,16 +160,43 @@ describe("local LifeThread vertical slice", () => {
     expect(aggregate).not.toBeNull();
     if (!aggregate) return;
 
-    // When state is projected and a Korean draft is requested
+    // When state is projected, the current action is completed, and a Korean draft is requested
     const projection = projectLivingState(aggregate);
+    expect(projection.next_action).toMatchObject({
+      task_id: aggregate.tasks[0]?.id,
+      status: "proposed",
+      content: aggregate.tasks[0]?.content,
+      source_type: "ai_suggested",
+    });
+    expect(projection.progress).toEqual({ completed: 0, total: 3, percent: 0 });
+    expect(projection.review_count).toBe(3);
+
+    const firstTask = aggregate.tasks[0];
+    expect(firstTask).toBeDefined();
+    if (!firstTask) return;
+    const completion = await runTaskCommand(repository, {
+      kind: "transition",
+      task_id: firstTask.id,
+      status: "completed",
+      expected_version: aggregate.thread.version,
+      now: "2026-07-15T12:29:00.000Z",
+    });
+    expect(completion.kind).toBe("applied");
+    const afterCompletion = await repository.load();
+    expect(afterCompletion).not.toBeNull();
+    if (!afterCompletion) return;
+
+    const nextProjection = projectLivingState(afterCompletion);
+    expect(nextProjection.next_action?.task_id).toBe(afterCompletion.tasks[1]?.id);
+    expect(nextProjection.progress).toEqual({ completed: 1, total: 3, percent: 33 });
+
     const drafted = await generateDraft(repository, {
       locale: "ko",
-      expected_version: aggregate.thread.version,
+      expected_version: afterCompletion.thread.version,
       now: "2026-07-15T12:30:00.000Z",
     });
 
-    // Then exactly one cited next action and no sending capability exist
-    expect(projection.next_action).not.toBeNull();
+    // Then the next task is actionable and the localized draft remains unsent
     expect(projection.next_action?.source_reference_ids).toContain("source_goal");
     expect(drafted.kind).toBe("applied");
     const current = await repository.load();

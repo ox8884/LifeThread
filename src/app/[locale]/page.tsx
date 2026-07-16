@@ -9,22 +9,33 @@ export const dynamic = "force-dynamic";
 
 type LocalePageProps = Readonly<{
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ action_error?: string | string[] }>;
 }>;
 
-export default async function LocalePage({ params }: LocalePageProps) {
+export default async function LocalePage({ params, searchParams }: LocalePageProps) {
   const { locale } = await params;
+  const { action_error: actionErrorValue } = await searchParams;
   if (!isLocale(locale)) notFound();
+  const actionError = actionErrorValue === "1"
+    || (Array.isArray(actionErrorValue) && actionErrorValue.includes("1"));
   const dictionary = getDictionary(locale);
   const alternateLocale = otherLocale(locale);
   const aggregate = await getRuntimeRepository().load();
 
   if (aggregate) {
-    return <Workspace aggregate={aggregate} locale={locale} dictionary={dictionary} />;
+    return (
+      <Workspace
+        aggregate={aggregate}
+        locale={locale}
+        dictionary={dictionary}
+        actionError={actionError}
+      />
+    );
   }
 
   return (
     <div className="create-shell" lang={locale}>
-      <aside className="create-rail" aria-label="LifeThread">
+      <header className="create-header">
         <Link className="brand" href={`/${locale}`}>
           <span className="brand-mark" aria-hidden="true">LT</span>
           LifeThread
@@ -32,25 +43,42 @@ export default async function LocalePage({ params }: LocalePageProps) {
         <Link className="locale-link" href={`/${alternateLocale}`}>
           {dictionary.switchLocale}
         </Link>
-      </aside>
+      </header>
+      {actionError ? (
+        <div className="action-error-banner" role="alert" aria-live="assertive">
+          <p>{dictionary.actionError}</p>
+          <Link className="button secondary" href={`/${locale}`}>{dictionary.tryAgain}</Link>
+        </div>
+      ) : null}
       <main className="create-main">
-        <p className="eyebrow">{dictionary.createEyebrow}</p>
-        <h1>{dictionary.createHeadline}</h1>
-        <p className="lede">{dictionary.createLede}</p>
-        <form className="goal-form" action={createThreadAction}>
-          <input type="hidden" name="locale" value={locale} />
-          <label htmlFor="goal">{dictionary.goalLabel}</label>
-          <textarea id="goal" name="goal" required maxLength={2000} placeholder={dictionary.goalPlaceholder} />
-          <button className="button primary" type="submit">{dictionary.createThread}</button>
-        </form>
-        <ul className="status-strip" aria-label="Demo boundaries">
-          <li>{dictionary.demoLabel}</li>
-          <li>{dictionary.privacyLabel}</li>
-          <li>{dictionary.sendingLabel}</li>
-        </ul>
-        <form action={resetDemoAction}>
-          <button className="button quiet" type="submit">{dictionary.resetDemo}</button>
-        </form>
+        <section className="create-intro" aria-labelledby="create-title">
+          <p className="eyebrow">{dictionary.noTemplateRequired}</p>
+          <h1 id="create-title">{dictionary.whatDoYouWantDone}</h1>
+          <p className="lede">{dictionary.goalIntro}</p>
+          <form className="goal-form" action={createThreadAction}>
+            <input type="hidden" name="locale" value={locale} />
+            <label htmlFor="goal">{dictionary.yourGoal}</label>
+            <textarea
+              id="goal"
+              name="goal"
+              required
+              maxLength={2000}
+              placeholder={dictionary.goalPlaceholder}
+            />
+            <button className="button primary" type="submit">{dictionary.startPlanning}</button>
+          </form>
+          <details className="create-details">
+            <summary>{dictionary.demoStatus}</summary>
+            <div>
+              <p>{dictionary.demoLabel}</p>
+              <p>{dictionary.privacyLabel}</p>
+              <p>{dictionary.sendingLabel}</p>
+              <form action={resetDemoAction}>
+                <button className="button quiet" type="submit">{dictionary.resetDemo}</button>
+              </form>
+            </div>
+          </details>
+        </section>
       </main>
     </div>
   );

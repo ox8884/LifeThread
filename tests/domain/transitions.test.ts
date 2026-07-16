@@ -45,6 +45,27 @@ describe("task transition policy", () => {
     }
   });
 
+  it("treats user completion of a proposal as explicit confirmation", () => {
+    // Given an AI-suggested proposed task
+    // When demo_user completes it from the primary next-action control
+    const result = transitionTask(proposedTask, {
+      kind: "set_status",
+      actor_id: "demo_user",
+      status: "completed",
+      occurred_at: "2026-07-15T12:05:00.000Z",
+    });
+
+    // Then completion also records explicit human confirmation without changing origin
+    expect(result.kind).toBe("applied");
+    if (result.kind === "applied") {
+      expect(result.task.status).toBe("completed");
+      expect(result.task.source_type).toBe("ai_suggested");
+      expect(result.task.user_confirmed).toBe(true);
+      expect(result.task.confirmed_by).toBe("demo_user");
+      expect(result.task.confirmed_at).toBe("2026-07-15T12:05:00.000Z");
+    }
+  });
+
   it("reopens a completed task and preserves its identity", () => {
     // Given a completed task
     const completed = { ...proposedTask, status: "completed" as const };
@@ -90,11 +111,11 @@ describe("task transition policy", () => {
     // Given canonical state before forbidden commands
     const before = canonicalSerialize(proposedTask);
 
-    // When an invalid completion or model-authored acceptance is attempted
+    // When an invalid waiting state or model-authored acceptance is attempted
     const invalid = transitionTask(proposedTask, {
       kind: "set_status",
       actor_id: "demo_user",
-      status: "completed",
+      status: "waiting",
       occurred_at: "2026-07-15T12:09:00.000Z",
     });
     const model = transitionTask(proposedTask, {

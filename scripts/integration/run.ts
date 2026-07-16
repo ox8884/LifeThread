@@ -13,8 +13,8 @@ if (process.env["LIFETHREAD_LIVE_INTEGRATION"] === "1") {
 
 if (process.exitCode !== 1) {
   const result = spawnSync(
-    "pnpm",
-    ["exec", "vitest", "run", "tests/integration", ...process.argv.slice(2)],
+    process.execPath,
+    ["node_modules/vitest/vitest.mjs", "run", "tests/integration", ...process.argv.slice(2)],
     { stdio: "inherit" },
   );
   process.exitCode = result.status ?? 1;

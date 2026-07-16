@@ -40,6 +40,13 @@ yarn-error.log*
 # browser verification output
 test-results/
 playwright-report/
+/qa-evidence/
+
+# local redesign QA artifacts
+/.omo/evidence/action-first-redesign*
+
+# local design-session state and tokens
+/.superpowers/
 
 # vercel
 .vercel

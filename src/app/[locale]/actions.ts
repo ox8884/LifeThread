@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { generateDraft } from "@/application/communication/generate-draft";
 import { resetDemo } from "@/application/demo/reset-demo";
@@ -11,7 +12,7 @@ import { createThread } from "@/application/threads/create-thread";
 import { canonicalStatusSchema } from "@/domain/status";
 import { RecordedAnalysisGateway } from "@/infrastructure/ai/recorded-analysis-gateway";
 import { getRuntimeRepository } from "@/infrastructure/runtime";
-import { isLocale } from "@/i18n/locales";
+import { isLocale, type Locale } from "@/i18n/locales";
 
 const integerSchema = z.coerce.number().int().nonnegative();
 
@@ -24,10 +25,19 @@ function refreshWorkspace(): void {
   revalidatePath("/", "layout");
 }
 
-export async function createThreadAction(formData: FormData): Promise<void> {
+function actionFailed(locale: Locale): never {
+  redirect(`/${locale}?action_error=1`);
+}
+
+function readLocale(formData: FormData): Locale {
   const localeValue = textValue(formData, "locale");
-  if (!isLocale(localeValue)) return;
-  await createThread(
+  if (!isLocale(localeValue)) actionFailed("en");
+  return localeValue;
+}
+
+export async function createThreadAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
+  const result = await createThread(
     {
       goal: textValue(formData, "goal"),
       locale: localeValue,
@@ -38,6 +48,7 @@ export async function createThreadAction(formData: FormData): Promise<void> {
       gateway: new RecordedAnalysisGateway(),
     },
   );
+  if (result.kind !== "created") actionFailed(localeValue);
   refreshWorkspace();
 }
 
@@ -52,24 +63,26 @@ export async function resetDemoAction(): Promise<void> {
 }
 
 export async function taskAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
   const version = integerSchema.safeParse(textValue(formData, "version"));
-  if (!version.success) return;
+  if (!version.success) actionFailed(localeValue);
   const kind = textValue(formData, "kind");
   const taskId = textValue(formData, "taskId");
   const base = {
     expected_version: version.data,
     now: new Date().toISOString(),
   };
+  let result: Awaited<ReturnType<typeof runTaskCommand>>;
   switch (kind) {
     case "add":
-      await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(getRuntimeRepository(), {
         ...base,
         kind,
         content: textValue(formData, "content"),
       });
       break;
     case "edit":
-      await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(getRuntimeRepository(), {
         ...base,
         kind,
         task_id: taskId,
@@ -78,8 +91,8 @@ export async function taskAction(formData: FormData): Promise<void> {
       break;
     case "transition": {
       const status = canonicalStatusSchema.safeParse(textValue(formData, "status"));
-      if (!status.success) return;
-      await runTaskCommand(getRuntimeRepository(), {
+      if (!status.success) actionFailed(localeValue);
+      result = await runTaskCommand(getRuntimeRepository(), {
         ...base,
         kind,
         task_id: taskId,
@@ -89,7 +102,7 @@ export async function taskAction(formData: FormData): Promise<void> {
     }
     case "tombstone":
     case "restore":
-      await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(getRuntimeRepository(), {
         ...base,
         kind,
         task_id: taskId,
@@ -97,8 +110,8 @@ export async function taskAction(formData: FormData): Promise<void> {
       break;
     case "reorder": {
       const position = integerSchema.safeParse(textValue(formData, "position"));
-      if (!position.success) return;
-      await runTaskCommand(getRuntimeRepository(), {
+      if (!position.success) actionFailed(localeValue);
+      result = await runTaskCommand(getRuntimeRepository(), {
         ...base,
         kind,
         task_id: taskId,
@@ -107,16 +120,17 @@ export async function taskAction(formData: FormData): Promise<void> {
       break;
     }
     default:
-      return;
+      actionFailed(localeValue);
   }
+  if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
 }
 
 export async function evidenceAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
   const version = integerSchema.safeParse(textValue(formData, "version"));
-  const localeValue = textValue(formData, "locale");
-  if (!version.success || !isLocale(localeValue)) return;
-  await ingestNoteEvidence(
+  if (!version.success) actionFailed(localeValue);
+  const result = await ingestNoteEvidence(
     getRuntimeRepository(),
     new RecordedAnalysisGateway(),
     {
@@ -126,28 +140,32 @@ export async function evidenceAction(formData: FormData): Promise<void> {
       now: new Date().toISOString(),
     },
   );
+  if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
 }
 
 export async function confirmFactAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
   const version = integerSchema.safeParse(textValue(formData, "version"));
-  if (!version.success) return;
-  await confirmFact(getRuntimeRepository(), {
+  if (!version.success) actionFailed(localeValue);
+  const result = await confirmFact(getRuntimeRepository(), {
     fact_id: textValue(formData, "factId"),
     expected_version: version.data,
     now: new Date().toISOString(),
   });
+  if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
 }
 
 export async function draftAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
   const version = integerSchema.safeParse(textValue(formData, "version"));
-  const localeValue = textValue(formData, "locale");
-  if (!version.success || !isLocale(localeValue)) return;
-  await generateDraft(getRuntimeRepository(), {
+  if (!version.success) actionFailed(localeValue);
+  const result = await generateDraft(getRuntimeRepository(), {
     locale: localeValue,
     expected_version: version.data,
     now: new Date().toISOString(),
   });
+  if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
 }

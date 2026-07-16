@@ -1,6 +1,6 @@
 # LifeThread Build Log
 
-This log records decisions and Codex participation honestly. As of 2026-07-15, only planning/documentation has occurred; implementation, debugging, runtime testing, database work, deployment, and scaffolding have not begun.
+This log records product decisions, implementation work, verification, and Codex participation honestly. Planning and the action-first local MVP redesign were completed on 2026-07-15. Deployment and live production-service verification remain outside the completed work.
 
 ## 2026-07-15 - Product planning and architecture
 
@@ -72,3 +72,42 @@ After implementation is explicitly authorized, append one dated entry per meanin
 - product-owner, design, and technical decisions kept distinct;
 - scope/stack changes only after explicit approval;
 - mocked, incomplete, deferred, or unsupported behavior labeled plainly.
+
+## 2026-07-15 - Action-first workspace redesign
+
+### Product-owner and design decisions
+
+- Approved the action-first direction: one dominant next action instead of a dashboard of equally weighted controls.
+- Completing the current action immediately advances the workspace and reveals the next action.
+- Evidence or a short update is optional after completion rather than a prerequisite for progress.
+- AI-proposed changes stay behind an explicit review step before canonical application.
+- Technical identifiers, checksums, provenance, and diagnostic detail remain available through progressive disclosure.
+- On narrow screens, the next action and optional update come before review, plan, and technical detail.
+- The visual direction uses warm paper surfaces, deep green action color, restrained borders, and editorial typography.
+
+### Behavior delivered
+
+- Rebuilt the creation and workspace surfaces around plain-language orientation and a single primary action.
+- Split the workspace into focused overview, next-action, candidate-review, task-plan, and detail components.
+- Added direct `proposed -> completed` confirmation while preserving source type and explicit confirmation history.
+- Added task-derived progress, next-action projection, and review counts that exclude the currently presented proposed action.
+- Added English and Korean action-first interface copy while preserving original user/task content verbatim.
+- Added an `aria-live` workspace revision announcement and an assertive inline error/retry surface that preserves the current workspace when a server action is rejected.
+- Made the installed React Scan and React Grab packages available only through an explicit development opt-in; no remote CDN scripts or automatic React Grab telemetry are used.
+
+### Engineering and debugging notes
+
+- Replaced Windows-incompatible package-manager child-process calls in the integration runner and Playwright reset helper with direct Node entry points.
+- The optional local instrumentation gate is `NEXT_PUBLIC_ENABLE_REACT_DEVTOOLS=1`; it remains disabled by default and in production.
+- Kept the existing Next.js App Router, domain model, recorded-fixture demo adapter, and local data path; no dependency or production schema migration was introduced.
+- Local demo verification uses the recorded fixture and `demo_user`. Live Supabase, OpenAI, authentication, deployment, and external actions were not exercised or represented as production-ready.
+
+### Verification evidence
+
+- Full Vitest suite: 32 tests passed, including the 2 integration tests.
+- Dedicated integration command: 2 tests passed.
+- Playwright responsive journey: 9 tests passed across desktop, tablet, and mobile, including English/Korean states and visible invalid-action feedback.
+- Demo preflight: `DEMO_PREFLIGHT_OK` in local recorded-fixture mode.
+- Acceptance audit: `ACCEPTANCE_AUDIT_OK`.
+- Next.js production build completed successfully.
+- Responsive and full-page captures are stored under `.omo/evidence/action-first-redesign/screens/`; the generated QA evidence remains local and is not part of the product source commit.
