@@ -21,7 +21,7 @@ test("renders an accessible Korean sign-up form with a preserved relative return
   await expect(page.getByRole("heading", { name: "무료로 가입" })).toBeVisible();
   await expect(page.getByLabel("이메일")).toBeVisible();
   await expect(page.getByLabel("비밀번호")).toBeVisible();
-  await expect(page.getByText("이메일과 비밀번호로 가입합니다.")).toBeVisible();
+  await expect(page.getByText("이메일과 비밀번호로 무료 가입합니다.")).toBeVisible();
 });
 
 test("uses the approved focus and control-boundary contrast on Korean sign-up", async ({ page }) => {

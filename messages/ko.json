@@ -94,7 +94,7 @@
     "signIn": "로그인",
     "signUp": "계정 만들기",
     "working": "처리 중…",
-    "freeOnly": "이메일과 비밀번호로 가입합니다. 유료 서비스는 필요 없습니다.",
+    "freeOnly": "이메일과 비밀번호로 무료 가입합니다.",
     "needAccount": "LifeThread가 처음이신가요?",
     "haveAccount": "이미 계정이 있으신가요?",
     "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다.",
