@@ -3,7 +3,7 @@ import type { AnalysisGateway } from "@/application/analysis/analysis-gateway";
 import { reconcileCandidate } from "@/application/analysis/reconcile-candidate";
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import { candidateDeltaSchema } from "@/domain/candidate-delta";
-import { ownsThread, parseAuthenticatedActor } from "@/domain/actors";
+import { ownsThread, parseUserActor } from "@/domain/actors";
 import type { LifeThreadAggregate } from "@/domain/entities";
 import { detectSourceLanguage, sha256, stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
@@ -16,7 +16,7 @@ export async function ingestNoteEvidence(
   gateway: AnalysisGateway,
   input: IngestNoteInput,
 ) {
-  const actor = parseAuthenticatedActor(input.actor);
+  const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "unauthorized_actor" } as const;
   const parsed = noteSchema.safeParse(input.note);
   if (!parsed.success) return { kind: "invalid_note" } as const;

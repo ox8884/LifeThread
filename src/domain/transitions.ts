@@ -26,7 +26,7 @@ export function transitionTask(
   task: Task,
   command: TaskCommand,
 ): TaskTransitionResult {
-  if (command.actor.actor_type === "recorded_fixture") {
+  if (command.actor.actor_type !== "user") {
     return { kind: "rejected", reason: "unauthorized_actor" };
   }
 

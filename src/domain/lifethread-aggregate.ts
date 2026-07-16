@@ -65,6 +65,9 @@ export function applyTaskMutation(
   if (mutation.expected_version !== aggregate.thread.version) {
     return { kind: "rejected", reason: "stale_version" };
   }
+  if (mutation.actor.actor_type !== "user") {
+    return { kind: "rejected", reason: "unauthorized_actor" };
+  }
   if (!ownsThread(mutation.actor, aggregate.thread.owner_id)) {
     return { kind: "rejected", reason: "unauthorized_actor" };
   }

@@ -1,6 +1,6 @@
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import type { Communication, LifeThreadAggregate } from "@/domain/entities";
-import { ownsThread, parseAuthenticatedActor } from "@/domain/actors";
+import { ownsThread, parseUserActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
@@ -10,7 +10,7 @@ export async function generateDraft(
   repository: ThreadRepository,
   input: GenerateDraftInput,
 ) {
-  const actor = parseAuthenticatedActor(input.actor);
+  const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "unauthorized_actor" } as const;
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" } as const;

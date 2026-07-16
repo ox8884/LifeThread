@@ -5,6 +5,7 @@ import { transitionTask } from "@/domain/transitions";
 import { USER_ID } from "@tests/fixtures/domain";
 
 const userActor = { actor_type: "user", actor_user_id: USER_ID } as const;
+const chatgptActor = { actor_type: "chatgpt_app", actor_user_id: USER_ID } as const;
 
 const proposedTask: Task = {
   id: "task_transition",
@@ -133,5 +134,33 @@ describe("task transition policy", () => {
     expect(invalid).toEqual({ kind: "rejected", reason: "invalid_transition" });
     expect(model).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
     expect(canonicalSerialize(proposedTask)).toBe(before);
+  });
+
+  it("rejects ChatGPT task controls even when its user ID matches", () => {
+    // Given a proposal and an owner-matching ChatGPT actor
+    const tombstoned = { ...proposedTask, deleted_at: proposedTask.updated_at, deleted_by: USER_ID };
+
+    // When ChatGPT attempts status, tombstone, and restore commands
+    const status = transitionTask(proposedTask, {
+      kind: "set_status",
+      actor: chatgptActor,
+      status: "pending",
+      occurred_at: "2026-07-15T12:10:00.000Z",
+    });
+    const tombstone = transitionTask(proposedTask, {
+      kind: "tombstone",
+      actor: chatgptActor,
+      occurred_at: "2026-07-15T12:10:00.000Z",
+    });
+    const restore = transitionTask(tombstoned, {
+      kind: "restore",
+      actor: chatgptActor,
+      occurred_at: "2026-07-15T12:10:00.000Z",
+    });
+
+    // Then only a user actor may control tasks
+    expect(status).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
+    expect(tombstone).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
+    expect(restore).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
   });
 });

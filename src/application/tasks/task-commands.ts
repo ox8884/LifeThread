@@ -4,7 +4,7 @@ import {
   type AggregateMutationResult,
   type TaskMutation,
 } from "@/domain/lifethread-aggregate";
-import { ownsThread, parseAuthenticatedActor, type RevisionActor } from "@/domain/actors";
+import { ownsThread, parseUserActor, type RevisionActor } from "@/domain/actors";
 import type { CanonicalStatus } from "@/domain/status";
 
 type TaskCommandInput =
@@ -30,7 +30,7 @@ export async function runTaskCommand(
   repository: ThreadRepository,
   input: TaskCommandInput,
 ): Promise<AggregateMutationResult | Readonly<{ kind: "missing_thread" }>> {
-  const actor = parseAuthenticatedActor(input.actor);
+  const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "rejected", reason: "unauthorized_actor" };
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" };
