@@ -1003,8 +1003,7 @@ textarea {
   margin: 2px 0;
   color: var(--quiet);
   font-size: 0.76rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 
 .auth-provider-divider::before,
@@ -1017,6 +1016,7 @@ textarea {
 
 .auth-provider-button {
   width: 100%;
+  border-color: var(--focus);
 }
 
 .auth-form label,
