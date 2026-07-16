@@ -7,12 +7,21 @@ import {
 import { ownsThread, parseUserActor, type RevisionActor } from "@/domain/actors";
 import type { CanonicalStatus } from "@/domain/status";
 
-type TaskCommandInput =
-  | Readonly<{ kind: "add"; content: string; expected_version: number; now: string; actor?: unknown }>
-  | Readonly<{ kind: "edit"; task_id: string; content: string; expected_version: number; now: string; actor?: unknown }>
-  | Readonly<{ kind: "transition"; task_id: string; status: CanonicalStatus; expected_version: number; now: string; actor?: unknown }>
-  | Readonly<{ kind: "tombstone" | "restore"; task_id: string; expected_version: number; now: string; actor?: unknown }>
-  | Readonly<{ kind: "reorder"; task_id: string; position: number; expected_version: number; now: string; actor?: unknown }>;
+type TaskCommandContext = Readonly<{
+  owner_id: string;
+  thread_id: string;
+  expected_version: number;
+  now: string;
+  actor?: unknown;
+}>;
+
+type TaskCommandInput = TaskCommandContext & (
+  | Readonly<{ kind: "add"; content: string }>
+  | Readonly<{ kind: "edit"; task_id: string; content: string }>
+  | Readonly<{ kind: "transition"; task_id: string; status: CanonicalStatus }>
+  | Readonly<{ kind: "tombstone" | "restore"; task_id: string }>
+  | Readonly<{ kind: "reorder"; task_id: string; position: number }>
+);
 
 function toMutation(input: TaskCommandInput, actor: RevisionActor): TaskMutation {
   const base = { actor, expected_version: input.expected_version, occurred_at: input.now };
@@ -32,12 +41,19 @@ export async function runTaskCommand(
 ): Promise<AggregateMutationResult | Readonly<{ kind: "missing_thread" }>> {
   const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "rejected", reason: "unauthorized_actor" };
-  const aggregate = await repository.load();
+  if (actor.actor_user_id !== input.owner_id) {
+    return { kind: "rejected", reason: "unauthorized_actor" };
+  }
+  const aggregate = await repository.load(input.owner_id, input.thread_id);
   if (!aggregate) return { kind: "missing_thread" };
   if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "rejected", reason: "unauthorized_actor" };
   const result = applyTaskMutation(aggregate, toMutation(input, actor));
   if (result.kind === "rejected") return result;
-  const saved = await repository.save(result.aggregate, input.expected_version);
+  const saved = await repository.save(
+    input.owner_id,
+    result.aggregate,
+    input.expected_version,
+  );
   if (saved.kind === "stale_version") return { kind: "rejected", reason: "stale_version" };
   return result;
 }

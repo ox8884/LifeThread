@@ -28,7 +28,7 @@ function initialAggregate(
   ownerId: string,
   actor: RevisionActor,
 ): LifeThreadAggregate {
-  const threadId = stableId("thread", `${ownerId}:${goal}`);
+  const threadId = stableId("thread", `${ownerId}:${now}:${goal}`);
   const evidenceId = stableId("evidence", `${threadId}:goal`);
   const sourceId = "source_goal";
   const digest = sha256(goal);
@@ -104,7 +104,6 @@ export async function createThread(
 ): Promise<CreateThreadResult> {
   const parsedGoal = goalSchema.safeParse(input.goal);
   if (!parsedGoal.success) return { kind: "invalid_goal" };
-  if (await dependencies.repository.load()) return { kind: "already_exists" };
   const ownerId = input.owner_id ?? recordedFixtureOwnerId;
   const initial = initialAggregate(parsedGoal.data, input.now, ownerId, dependencies.gateway.actor);
   const rawCandidate = await dependencies.gateway.analyze({
@@ -117,7 +116,11 @@ export async function createThread(
   if (!candidate.success) return { kind: "analysis_rejected" };
   const reconciliation = reconcileCandidate(initial, candidate.data, input.now, dependencies.gateway.actor);
   if (reconciliation.kind !== "applied") return { kind: "analysis_rejected" };
-  const saved = await dependencies.repository.save(reconciliation.aggregate, null);
+  const saved = await dependencies.repository.save(
+    ownerId,
+    reconciliation.aggregate,
+    null,
+  );
   if (saved.kind === "stale_version") return { kind: "already_exists" };
   return { kind: "created", aggregate: reconciliation.aggregate };
 }

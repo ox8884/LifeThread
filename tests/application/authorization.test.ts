@@ -43,6 +43,8 @@ describe("application write authorization", () => {
     // When a non-owner attempts a task transition
     const result = await runTaskCommand(repository, {
       kind: "transition",
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       task_id: task.id,
       status: "pending",
       expected_version: aggregate.thread.version,
@@ -60,6 +62,8 @@ describe("application write authorization", () => {
 
     // When a non-owner submits new evidence
     const result = await ingestNoteEvidence(repository, gateway, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       note: "The schedule changed.",
       locale: "en",
       expected_version: aggregate.thread.version,
@@ -80,6 +84,8 @@ describe("application write authorization", () => {
 
     // When a non-owner confirms the fact
     const result = await confirmFact(repository, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       fact_id: fact.id,
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",
@@ -96,6 +102,8 @@ describe("application write authorization", () => {
 
     // When a non-owner requests a draft
     const result = await generateDraft(repository, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       locale: "en",
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",
@@ -116,6 +124,8 @@ describe("application write authorization", () => {
     // When ChatGPT tries to accept the task
     const result = await runTaskCommand(repository, {
       kind: "transition",
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       task_id: task.id,
       status: "pending",
       expected_version: aggregate.thread.version,
@@ -137,6 +147,8 @@ describe("application write authorization", () => {
     // When ChatGPT tries to tombstone the task
     const result = await runTaskCommand(repository, {
       kind: "tombstone",
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       task_id: task.id,
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",
@@ -157,12 +169,18 @@ describe("application write authorization", () => {
       ...aggregate,
       tasks: [{ ...task, deleted_at: aggregate.thread.updated_at, deleted_by: aggregate.thread.owner_id }],
     };
-    const saved = await repository.save(tombstoned, aggregate.thread.version);
+    const saved = await repository.save(
+      aggregate.thread.owner_id,
+      tombstoned,
+      aggregate.thread.version,
+    );
     expect(saved.kind).toBe("saved");
 
     // When ChatGPT tries to restore the task
     const result = await runTaskCommand(repository, {
       kind: "restore",
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       task_id: task.id,
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",
@@ -179,6 +197,8 @@ describe("application write authorization", () => {
 
     // When ChatGPT submits user evidence
     const result = await ingestNoteEvidence(repository, gateway, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       note: "The schedule changed.",
       locale: "en",
       expected_version: aggregate.thread.version,
@@ -199,6 +219,8 @@ describe("application write authorization", () => {
 
     // When ChatGPT confirms the fact
     const result = await confirmFact(repository, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       fact_id: fact.id,
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",
@@ -215,6 +237,8 @@ describe("application write authorization", () => {
 
     // When ChatGPT requests a user draft
     const result = await generateDraft(repository, {
+      owner_id: aggregate.thread.owner_id,
+      thread_id: aggregate.thread.id,
       locale: "en",
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:10:00.000Z",

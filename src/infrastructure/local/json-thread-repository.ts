@@ -1,58 +1,122 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { z } from "zod";
+import { projectLivingState } from "@/application/state/project-living-state";
 import type {
+  ResettableThreadRepository,
   SaveResult,
   ThreadRepository,
+  ThreadSummary,
 } from "@/application/threads/thread-repository";
+import { ThreadOwnerMismatchError } from "@/application/threads/thread-repository";
 import {
   lifeThreadAggregateSchema,
   type LifeThreadAggregate,
 } from "@/domain/entities";
 
+const localThreadEnvelopeSchema = z.object({
+  schema_version: z.literal("lifethread.local_threads.v1"),
+  threads: z.array(lifeThreadAggregateSchema).readonly(),
+}).strict().readonly();
+
+type LocalThreadEnvelope = z.infer<typeof localThreadEnvelopeSchema>;
+
+const emptyEnvelope: LocalThreadEnvelope = {
+  schema_version: "lifethread.local_threads.v1",
+  threads: [],
+};
+
 function isMissingFile(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
-export class LocalJsonThreadRepository implements ThreadRepository {
+export class LocalJsonThreadRepository implements ThreadRepository, ResettableThreadRepository {
   readonly #path: string;
 
   constructor(path: string) {
     this.#path = path;
   }
 
-  async load(): Promise<LifeThreadAggregate | null> {
-    try {
-      const content = await readFile(this.#path, "utf8");
-      return lifeThreadAggregateSchema.parse(JSON.parse(content));
-    } catch (error) {
-      if (isMissingFile(error)) return null;
-      throw error;
-    }
+  async list(ownerId: string): Promise<readonly ThreadSummary[]> {
+    const envelope = await this.read();
+    return envelope.threads
+      .filter((aggregate) => aggregate.thread.owner_id === ownerId)
+      .map((aggregate) => ({
+        id: aggregate.thread.id,
+        title: aggregate.thread.title,
+        goal_text: aggregate.thread.goal_text,
+        version: aggregate.thread.version,
+        updated_at: aggregate.thread.updated_at,
+        review_count: projectLivingState(aggregate).review_count,
+      }))
+      .sort((left, right) => right.updated_at.localeCompare(left.updated_at));
+  }
+
+  async load(
+    ownerId: string,
+    threadId: string,
+  ): Promise<LifeThreadAggregate | null> {
+    const envelope = await this.read();
+    return envelope.threads.find(
+      (aggregate) => aggregate.thread.owner_id === ownerId
+        && aggregate.thread.id === threadId,
+    ) ?? null;
   }
 
   async save(
+    ownerId: string,
     aggregate: LifeThreadAggregate,
     expectedVersion: number | null,
   ): Promise<SaveResult> {
-    const current = await this.load();
+    const parsed = lifeThreadAggregateSchema.parse(aggregate);
+    if (parsed.thread.owner_id !== ownerId) {
+      throw new ThreadOwnerMismatchError(ownerId, parsed.thread.owner_id);
+    }
+    const envelope = await this.read();
+    const current = envelope.threads.find(
+      (candidate) => candidate.thread.id === parsed.thread.id,
+    );
+    if (current && current.thread.owner_id !== ownerId) {
+      throw new ThreadOwnerMismatchError(ownerId, current.thread.owner_id);
+    }
     const actualVersion = current?.thread.version ?? null;
     if (actualVersion !== expectedVersion) {
       return { kind: "stale_version", actual_version: actualVersion };
     }
-    await this.write(aggregate);
+    const threads = current
+      ? envelope.threads.map((candidate) => (
+        candidate.thread.id === parsed.thread.id ? parsed : candidate
+      ))
+      : [...envelope.threads, parsed];
+    await this.write({ ...envelope, threads });
     return { kind: "saved" };
   }
 
-  async reset(aggregate: LifeThreadAggregate | null): Promise<void> {
-    if (aggregate) {
-      await this.write(aggregate);
+  async resetOwner(ownerId: string): Promise<void> {
+    const envelope = await this.read();
+    const threads = envelope.threads.filter(
+      (aggregate) => aggregate.thread.owner_id !== ownerId,
+    );
+    if (threads.length === envelope.threads.length) return;
+    if (threads.length === 0) {
+      await rm(this.#path, { force: true });
       return;
     }
-    await rm(this.#path, { force: true });
+    await this.write({ ...envelope, threads });
   }
 
-  private async write(aggregate: LifeThreadAggregate): Promise<void> {
-    const parsed = lifeThreadAggregateSchema.parse(aggregate);
+  private async read(): Promise<LocalThreadEnvelope> {
+    try {
+      const content = await readFile(this.#path, "utf8");
+      return localThreadEnvelopeSchema.parse(JSON.parse(content));
+    } catch (error) {
+      if (isMissingFile(error)) return emptyEnvelope;
+      throw error;
+    }
+  }
+
+  private async write(envelope: LocalThreadEnvelope): Promise<void> {
+    const parsed = localThreadEnvelopeSchema.parse(envelope);
     await mkdir(dirname(this.#path), { recursive: true, mode: 0o700 });
     const temporaryPath = `${this.#path}.tmp`;
     await writeFile(temporaryPath, `${JSON.stringify(parsed, null, 2)}\n`, {

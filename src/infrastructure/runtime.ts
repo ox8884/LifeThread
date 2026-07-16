@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { LocalJsonThreadRepository } from "@/infrastructure/local/json-thread-repository";
+import type { RepositoryClient } from "@/infrastructure/supabase/repository-client";
+import { SupabaseThreadRepository } from "@/infrastructure/supabase/supabase-thread-repository";
 
 export function resolveRuntimeStatePath(
   vercelEnvironment: string | undefined,
@@ -19,4 +21,10 @@ export const runtimeStatePath = resolveRuntimeStatePath(
 
 export function getRuntimeRepository(): LocalJsonThreadRepository {
   return new LocalJsonThreadRepository(runtimeStatePath);
+}
+
+export function getAuthenticatedRuntimeRepository(
+  client: RepositoryClient,
+): SupabaseThreadRepository {
+  return new SupabaseThreadRepository(client);
 }

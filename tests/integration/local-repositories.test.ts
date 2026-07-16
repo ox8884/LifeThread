@@ -4,34 +4,134 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { LocalJsonThreadRepository } from "@/infrastructure/local/json-thread-repository";
 import { LocalPrivateStorage } from "@/infrastructure/local/private-storage";
+import { demoGoal, resetDemo } from "@/application/demo/reset-demo";
 import { canonicalSerialize } from "@/domain/serialization";
 import { createAggregateFixture } from "@tests/fixtures/domain";
 
 describe("local persistence adapters", () => {
-  it("round-trips one aggregate and rejects a stale optimistic write", async () => {
+  it("lists multiple threads for only their owner", async () => {
     // Given a repository backed by a real temporary directory
     const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
     const path = join(directory, "state.json");
     const repository = new LocalJsonThreadRepository(path);
-    const aggregate = createAggregateFixture();
-
-    // When the first write and one stale write are attempted
-    const first = await repository.save(aggregate, null);
-    const stale = await repository.save(
-      {
-        ...aggregate,
-        thread: { ...aggregate.thread, version: 2 },
+    const firstAggregate = createAggregateFixture();
+    const ownerId = firstAggregate.thread.owner_id;
+    const secondAggregate = {
+      ...firstAggregate,
+      thread: {
+        ...firstAggregate.thread,
+        id: "thread_second",
+        title: "Study plan, again",
+        updated_at: "2026-07-15T12:01:00.000Z",
       },
-      0,
-    );
+    };
 
-    // Then only the expected write survives on disk
+    // When two threads with the same goal text are saved for one owner
+    const first = await repository.save(ownerId, firstAggregate, null);
+    const second = await repository.save(ownerId, secondAggregate, null);
+
+    // Then that owner sees both newest-first while another owner sees neither
     expect(first).toEqual({ kind: "saved" });
-    expect(stale).toEqual({ kind: "stale_version", actual_version: 1 });
-    const loaded = await repository.load();
+    expect(second).toEqual({ kind: "saved" });
+    expect(await repository.list(ownerId)).toEqual([
+      {
+        id: "thread_second",
+        title: "Study plan, again",
+        goal_text: firstAggregate.thread.goal_text,
+        version: 1,
+        updated_at: "2026-07-15T12:01:00.000Z",
+        review_count: 0,
+      },
+      {
+        id: "thread_fixture",
+        title: "Study plan",
+        goal_text: firstAggregate.thread.goal_text,
+        version: 1,
+        updated_at: "2026-07-15T12:00:00.000Z",
+        review_count: 0,
+      },
+    ]);
+    const otherOwnerId = "22222222-2222-4222-8222-222222222222";
+    expect(await repository.list(otherOwnerId)).toEqual([]);
+    expect(await repository.load(otherOwnerId, firstAggregate.thread.id)).toBeNull();
+  });
+
+  it("preserves the winning revision after a stale optimistic write", async () => {
+    // Given one persisted thread and a winning second revision
+    const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
+    const repository = new LocalJsonThreadRepository(join(directory, "state.json"));
+    const aggregate = createAggregateFixture();
+    const ownerId = aggregate.thread.owner_id;
+    const winningAggregate = {
+      ...aggregate,
+      thread: {
+        ...aggregate.thread,
+        title: "Winning revision",
+        version: 2,
+        updated_at: "2026-07-15T12:01:00.000Z",
+      },
+    };
+    await repository.save(ownerId, aggregate, null);
+    const winning = await repository.save(ownerId, winningAggregate, 1);
+
+    // When a competing writer saves from the stale first version
+    const stale = await repository.save(ownerId, {
+      ...winningAggregate,
+      thread: { ...winningAggregate.thread, title: "Losing revision" },
+    }, 1);
+
+    // Then the stale result reports version two and the winner remains on disk
+    expect(winning).toEqual({ kind: "saved" });
+    expect(stale).toEqual({ kind: "stale_version", actual_version: 2 });
+    const loaded = await repository.load(ownerId, aggregate.thread.id);
     expect(loaded ? canonicalSerialize(loaded) : null).toBe(
-      canonicalSerialize(aggregate),
+      canonicalSerialize(winningAggregate),
     );
+  });
+
+  it("rejects a save whose caller does not own the aggregate", async () => {
+    // Given an aggregate owned by another user
+    const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
+    const repository = new LocalJsonThreadRepository(join(directory, "state.json"));
+    const aggregate = createAggregateFixture();
+    const otherOwnerId = "22222222-2222-4222-8222-222222222222";
+
+    // When the other user attempts the initial save
+    const save = repository.save(otherOwnerId, aggregate, null);
+
+    // Then persistence rejects the caller and leaves both owner scopes empty
+    await expect(save).rejects.toThrow();
+    expect(await repository.list(aggregate.thread.owner_id)).toEqual([]);
+    expect(await repository.list(otherOwnerId)).toEqual([]);
+  });
+
+  it("resets only local demo owner state before recreating the canonical demo thread", async () => {
+    // Given a local demo repository with a stale second thread for the demo owner
+    const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
+    const repository = new LocalJsonThreadRepository(join(directory, "state.json"));
+    const firstDemo = await resetDemo(repository);
+    const staleDemoThread = {
+      ...firstDemo,
+      thread: {
+        ...firstDemo.thread,
+        id: "thread_stale_demo",
+        title: "Stale demo thread",
+        updated_at: "2026-07-15T12:01:00.000Z",
+      },
+    };
+    await repository.save(firstDemo.thread.owner_id, staleDemoThread, null);
+
+    // When the local demo reset runs again
+    const reset = await resetDemo(repository);
+
+    // Then it recreates exactly the canonical demo thread without stale local state
+    expect(reset.thread.goal_text).toBe(demoGoal);
+    expect(await repository.list(reset.thread.owner_id)).toEqual([
+      expect.objectContaining({
+        id: reset.thread.id,
+        goal_text: demoGoal,
+      }),
+    ]);
   });
 
   it("keeps objects private and grants only an expiring signed read", async () => {

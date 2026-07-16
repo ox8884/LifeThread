@@ -3,7 +3,14 @@ import type { LifeThreadAggregate } from "@/domain/entities";
 import { ownsThread, parseUserActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 
-type ConfirmFactInput = Readonly<{ fact_id: string; expected_version: number; now: string; actor?: unknown }>;
+type ConfirmFactInput = Readonly<{
+  owner_id: string;
+  thread_id: string;
+  fact_id: string;
+  expected_version: number;
+  now: string;
+  actor?: unknown;
+}>;
 
 export async function confirmFact(
   repository: ThreadRepository,
@@ -11,7 +18,8 @@ export async function confirmFact(
 ) {
   const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "unauthorized_actor" } as const;
-  const aggregate = await repository.load();
+  if (actor.actor_user_id !== input.owner_id) return { kind: "unauthorized_actor" } as const;
+  const aggregate = await repository.load(input.owner_id, input.thread_id);
   if (!aggregate) return { kind: "missing_thread" } as const;
   if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) {
@@ -42,6 +50,10 @@ export async function confirmFact(
       created_at: input.now,
     }],
   };
-  const saved = await repository.save(updated, input.expected_version);
+  const saved = await repository.save(
+    input.owner_id,
+    updated,
+    input.expected_version,
+  );
   return saved.kind === "saved" ? { kind: "applied", aggregate: updated } as const : { kind: "stale_version" } as const;
 }

@@ -1,9 +1,14 @@
 import { missingRuntimeEnvironment } from "../../src/config/env";
 import { getRuntimeRepository } from "../../src/infrastructure/runtime";
+import { recordedFixtureOwnerId } from "../../src/domain/actors";
 import en from "../../messages/en.json";
 import ko from "../../messages/ko.json";
 
-const localState = await getRuntimeRepository().load();
+const repository = getRuntimeRepository();
+const summary = (await repository.list(recordedFixtureOwnerId))[0];
+const localState = summary
+  ? await repository.load(recordedFixtureOwnerId, summary.id)
+  : null;
 const dictionariesMatch = JSON.stringify(Object.keys(en).sort()) === JSON.stringify(Object.keys(ko).sort());
 
 if (localState && dictionariesMatch) {

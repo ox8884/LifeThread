@@ -41,6 +41,7 @@ export function CandidateReview({
               <div className="review-actions">
                 <form action={taskAction}>
                   <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="threadId" value={aggregate.thread.id} />
                   <input type="hidden" name="kind" value="transition" />
                   <input type="hidden" name="taskId" value={task.id} />
                   <input type="hidden" name="status" value="pending" />
@@ -49,6 +50,7 @@ export function CandidateReview({
                 </form>
                 <form action={taskAction}>
                   <input type="hidden" name="locale" value={locale} />
+                  <input type="hidden" name="threadId" value={aggregate.thread.id} />
                   <input type="hidden" name="kind" value="transition" />
                   <input type="hidden" name="taskId" value={task.id} />
                   <input type="hidden" name="status" value="rejected" />
@@ -64,6 +66,7 @@ export function CandidateReview({
               <p>{fact.content}</p>
               <form action={confirmFactAction}>
                 <input type="hidden" name="locale" value={locale} />
+                <input type="hidden" name="threadId" value={aggregate.thread.id} />
                 <input type="hidden" name="version" value={aggregate.thread.version} />
                 <input type="hidden" name="factId" value={fact.id} />
                 <button className="button secondary" type="submit">{dictionary.confirmFact}</button>

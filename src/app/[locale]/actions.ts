@@ -9,6 +9,7 @@ import { ingestNoteEvidence } from "@/application/evidence/ingest-evidence";
 import { confirmFact } from "@/application/facts/confirm-fact";
 import { runTaskCommand } from "@/application/tasks/task-commands";
 import { createThread } from "@/application/threads/create-thread";
+import { recordedFixtureOwnerId } from "@/domain/actors";
 import { canonicalStatusSchema } from "@/domain/status";
 import { RecordedAnalysisGateway } from "@/infrastructure/ai/recorded-analysis-gateway";
 import { getRuntimeRepository } from "@/infrastructure/runtime";
@@ -53,7 +54,7 @@ export async function createThreadAction(formData: FormData): Promise<void> {
 }
 
 export async function startFreshAction(): Promise<void> {
-  await getRuntimeRepository().reset(null);
+  await getRuntimeRepository().resetOwner(recordedFixtureOwnerId);
   refreshWorkspace();
 }
 
@@ -69,6 +70,8 @@ export async function taskAction(formData: FormData): Promise<void> {
   const kind = textValue(formData, "kind");
   const taskId = textValue(formData, "taskId");
   const base = {
+    owner_id: recordedFixtureOwnerId,
+    thread_id: textValue(formData, "threadId"),
     expected_version: version.data,
     now: new Date().toISOString(),
   };
@@ -134,6 +137,8 @@ export async function evidenceAction(formData: FormData): Promise<void> {
     getRuntimeRepository(),
     new RecordedAnalysisGateway(),
     {
+      owner_id: recordedFixtureOwnerId,
+      thread_id: textValue(formData, "threadId"),
       note: textValue(formData, "note"),
       locale: localeValue,
       expected_version: version.data,
@@ -149,6 +154,8 @@ export async function confirmFactAction(formData: FormData): Promise<void> {
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
   const result = await confirmFact(getRuntimeRepository(), {
+    owner_id: recordedFixtureOwnerId,
+    thread_id: textValue(formData, "threadId"),
     fact_id: textValue(formData, "factId"),
     expected_version: version.data,
     now: new Date().toISOString(),
@@ -162,6 +169,8 @@ export async function draftAction(formData: FormData): Promise<void> {
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
   const result = await generateDraft(getRuntimeRepository(), {
+    owner_id: recordedFixtureOwnerId,
+    thread_id: textValue(formData, "threadId"),
     locale: localeValue,
     expected_version: version.data,
     now: new Date().toISOString(),

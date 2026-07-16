@@ -4,7 +4,14 @@ import { ownsThread, parseUserActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
-type GenerateDraftInput = Readonly<{ locale: Locale; expected_version: number; now: string; actor?: unknown }>;
+type GenerateDraftInput = Readonly<{
+  owner_id: string;
+  thread_id: string;
+  locale: Locale;
+  expected_version: number;
+  now: string;
+  actor?: unknown;
+}>;
 
 export async function generateDraft(
   repository: ThreadRepository,
@@ -12,7 +19,8 @@ export async function generateDraft(
 ) {
   const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "unauthorized_actor" } as const;
-  const aggregate = await repository.load();
+  if (actor.actor_user_id !== input.owner_id) return { kind: "unauthorized_actor" } as const;
+  const aggregate = await repository.load(input.owner_id, input.thread_id);
   if (!aggregate) return { kind: "missing_thread" } as const;
   if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) return { kind: "stale_version" } as const;
@@ -51,6 +59,10 @@ export async function generateDraft(
       created_at: input.now,
     }],
   };
-  const saved = await repository.save(updated, input.expected_version);
+  const saved = await repository.save(
+    input.owner_id,
+    updated,
+    input.expected_version,
+  );
   return saved.kind === "saved" ? { kind: "applied", aggregate: updated } as const : { kind: "stale_version" } as const;
 }

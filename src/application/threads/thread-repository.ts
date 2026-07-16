@@ -1,14 +1,39 @@
 import type { LifeThreadAggregate } from "@/domain/entities";
 
+export type ThreadSummary = Readonly<{
+  id: string;
+  title: string;
+  goal_text: string;
+  version: number;
+  updated_at: string;
+  review_count: number;
+}>;
+
 export type SaveResult =
   | Readonly<{ kind: "saved" }>
   | Readonly<{ kind: "stale_version"; actual_version: number | null }>;
 
 export interface ThreadRepository {
-  load(): Promise<LifeThreadAggregate | null>;
+  list(ownerId: string): Promise<readonly ThreadSummary[]>;
+  load(ownerId: string, threadId: string): Promise<LifeThreadAggregate | null>;
   save(
+    ownerId: string,
     aggregate: LifeThreadAggregate,
     expectedVersion: number | null,
   ): Promise<SaveResult>;
-  reset(aggregate: LifeThreadAggregate | null): Promise<void>;
+}
+
+export interface ResettableThreadRepository {
+  resetOwner(ownerId: string): Promise<void>;
+}
+
+export class ThreadOwnerMismatchError extends Error {
+  readonly name = "ThreadOwnerMismatchError";
+
+  constructor(
+    readonly ownerId: string,
+    readonly aggregateOwnerId: string,
+  ) {
+    super("The repository caller does not own the aggregate");
+  }
 }

@@ -72,6 +72,7 @@ export function ThreadDetails({ aggregate, locale, dictionary }: ThreadDetailsPr
         </summary>
         <div className="detail-content">
           <form action={draftAction}>
+            <input type="hidden" name="threadId" value={aggregate.thread.id} />
             <input type="hidden" name="version" value={aggregate.thread.version} />
             <input type="hidden" name="locale" value={locale} />
             <button className="button secondary" type="submit">{dictionary.generateDraft}</button>

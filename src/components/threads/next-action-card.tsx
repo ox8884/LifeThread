@@ -4,6 +4,7 @@ import type { Dictionary, Locale } from "@/i18n/locales";
 
 type NextActionCardProps = Readonly<{
   nextAction: LivingStateProjection["next_action"];
+  threadId: string;
   version: number;
   locale: Locale;
   dictionary: Dictionary;
@@ -11,6 +12,7 @@ type NextActionCardProps = Readonly<{
 
 export function NextActionCard({
   nextAction,
+  threadId,
   version,
   locale,
   dictionary,
@@ -33,6 +35,7 @@ export function NextActionCard({
       <div className="next-action-controls">
         <form action={taskAction}>
           <input type="hidden" name="locale" value={locale} />
+          <input type="hidden" name="threadId" value={threadId} />
           <input type="hidden" name="kind" value="transition" />
           <input type="hidden" name="taskId" value={nextAction.task_id} />
           <input type="hidden" name="status" value="completed" />
@@ -45,6 +48,7 @@ export function NextActionCard({
         </details>
       </div>
       <form className="quick-update" action={evidenceAction}>
+        <input type="hidden" name="threadId" value={threadId} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="locale" value={locale} />
         <label htmlFor="quick-update-note">{dictionary.whatChanged}</label>

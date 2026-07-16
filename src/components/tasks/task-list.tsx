@@ -3,6 +3,7 @@ import type { Task } from "@/domain/entities";
 import type { Dictionary, Locale } from "@/i18n/locales";
 
 type TaskListProps = Readonly<{
+  threadId: string;
   tasks: Task[];
   version: number;
   currentTaskId: string | null;
@@ -18,6 +19,7 @@ function HiddenTaskFields({ task, version, locale }: Readonly<{
   return (
     <>
       <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="threadId" value={task.thread_id} />
       <input type="hidden" name="taskId" value={task.id} />
       <input type="hidden" name="version" value={version} />
     </>
@@ -102,7 +104,7 @@ function TaskControls({ task, version, locale, dictionary }: Readonly<{
   );
 }
 
-export function TaskList({ tasks, version, currentTaskId, locale, dictionary }: TaskListProps) {
+export function TaskList({ threadId, tasks, version, currentTaskId, locale, dictionary }: TaskListProps) {
   const sortedTasks = [...tasks].sort((left, right) => left.position - right.position);
   const visibleTasks = sortedTasks.filter((task) => !task.deleted_at);
   const removedTasks = sortedTasks.filter((task) => task.deleted_at);
@@ -143,6 +145,7 @@ export function TaskList({ tasks, version, currentTaskId, locale, dictionary }: 
       </div>
       <form className="inline-form add-task-form" action={taskAction}>
         <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="threadId" value={threadId} />
         <input type="hidden" name="kind" value="add" />
         <input type="hidden" name="version" value={version} />
         <label className="sr-only" htmlFor="new-task">{dictionary.newTask}</label>

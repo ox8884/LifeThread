@@ -9,7 +9,15 @@ import { detectSourceLanguage, sha256, stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
 const noteSchema = z.string().transform((value) => value.normalize("NFC").trim()).pipe(z.string().min(1).max(50_000));
-type IngestNoteInput = Readonly<{ note: string; locale: Locale; expected_version: number; now: string; actor?: unknown }>;
+type IngestNoteInput = Readonly<{
+  owner_id: string;
+  thread_id: string;
+  note: string;
+  locale: Locale;
+  expected_version: number;
+  now: string;
+  actor?: unknown;
+}>;
 
 export async function ingestNoteEvidence(
   repository: ThreadRepository,
@@ -18,9 +26,10 @@ export async function ingestNoteEvidence(
 ) {
   const actor = parseUserActor(input.actor);
   if (!actor) return { kind: "unauthorized_actor" } as const;
+  if (actor.actor_user_id !== input.owner_id) return { kind: "unauthorized_actor" } as const;
   const parsed = noteSchema.safeParse(input.note);
   if (!parsed.success) return { kind: "invalid_note" } as const;
-  const aggregate = await repository.load();
+  const aggregate = await repository.load(input.owner_id, input.thread_id);
   if (!aggregate) return { kind: "missing_thread" } as const;
   if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) return { kind: "stale_version" } as const;
@@ -80,7 +89,11 @@ export async function ingestNoteEvidence(
   if (!candidate.success) return { kind: "analysis_rejected" } as const;
   const reconciled = reconcileCandidate(withEvidence, candidate.data, input.now, gateway.actor);
   if (reconciled.kind !== "applied") return { kind: "analysis_rejected" } as const;
-  const saved = await repository.save(reconciled.aggregate, input.expected_version);
+  const saved = await repository.save(
+    input.owner_id,
+    reconciled.aggregate,
+    input.expected_version,
+  );
   return saved.kind === "saved"
     ? { kind: "applied", aggregate: reconciled.aggregate } as const
     : { kind: "stale_version" } as const;

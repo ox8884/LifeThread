@@ -2,8 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale, otherLocale } from "@/i18n/locales";
 import { createThreadAction, resetDemoAction } from "@/app/[locale]/actions";
+import { getThread } from "@/application/threads/get-thread";
+import { listThreads } from "@/application/threads/list-threads";
 import { getRuntimeRepository } from "@/infrastructure/runtime";
 import { Workspace } from "@/components/threads/workspace";
+import { recordedFixtureOwnerId } from "@/domain/actors";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +23,12 @@ export default async function LocalePage({ params, searchParams }: LocalePagePro
     || (Array.isArray(actionErrorValue) && actionErrorValue.includes("1"));
   const dictionary = getDictionary(locale);
   const alternateLocale = otherLocale(locale);
-  const aggregate = await getRuntimeRepository().load();
+  const repository = getRuntimeRepository();
+  const summaries = await listThreads(repository, recordedFixtureOwnerId);
+  const summary = summaries[0];
+  const aggregate = summary
+    ? await getThread(repository, recordedFixtureOwnerId, summary.id)
+    : null;
 
   if (aggregate) {
     return (

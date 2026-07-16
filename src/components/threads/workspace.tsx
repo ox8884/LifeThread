@@ -41,6 +41,7 @@ export function Workspace({ aggregate, locale, dictionary, actionError }: Worksp
         <section className="action-grid">
           <NextActionCard
             nextAction={projection.next_action}
+            threadId={aggregate.thread.id}
             version={aggregate.thread.version}
             locale={locale}
             dictionary={dictionary}
@@ -54,6 +55,7 @@ export function Workspace({ aggregate, locale, dictionary, actionError }: Worksp
           />
         </section>
         <TaskList
+          threadId={aggregate.thread.id}
           tasks={aggregate.tasks}
           version={aggregate.thread.version}
           currentTaskId={currentTaskId}
