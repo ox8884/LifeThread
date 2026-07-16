@@ -68,6 +68,7 @@ export async function createThreadAction(formData: FormData): Promise<void> {
   );
   if (result.kind !== "created") actionFailed(localeValue);
   refreshWorkspace();
+  redirect("/" + localeValue + "/threads/" + result.aggregate.thread.id);
 }
 
 export async function taskAction(formData: FormData): Promise<void> {
