@@ -111,3 +111,11 @@ After implementation is explicitly authorized, append one dated entry per meanin
 - Acceptance audit: `ACCEPTANCE_AUDIT_OK`.
 - Next.js production build completed successfully.
 - Responsive and full-page captures are stored under `.omo/evidence/action-first-redesign/screens/`; the generated QA evidence remains local and is not part of the product source commit.
+
+## 2026-07-16 - Vercel deployment compatibility
+
+- The first production deployment built successfully but failed when `Start planning` attempted to create `/var/task/.lifethread`.
+- Vercel runtime mode now stores the recorded-demo JSON state below the OS temporary directory while retaining the repository-local `.lifethread` path for local development.
+- This keeps the single-profile recorded demo usable on Vercel. Durable multi-user persistence still requires the deferred Supabase integration; the temporary runtime state is not a production database.
+- Final production deployment: `https://lifethread-inky.vercel.app`.
+- Vercel-mode browser QA: 9 Playwright tests passed across desktop, tablet, and mobile after the fix.
