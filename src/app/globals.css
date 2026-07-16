@@ -72,6 +72,18 @@ p {
   overflow-wrap: anywhere;
 }
 
+[lang="ko"] h1,
+[lang="ko"] h2,
+[lang="ko"] h3,
+[lang="ko"] p,
+[lang="ko"] label,
+[lang="ko"] button,
+[lang="ko"] summary,
+[lang="ko"] textarea {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
 code {
   color: var(--muted);
   font-family: var(--font-geist-mono), monospace;
