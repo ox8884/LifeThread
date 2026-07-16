@@ -47,6 +47,7 @@ playwright-report/
 
 # local design-session state and tokens
 /.superpowers/
+/.worktrees/
 
 # vercel
 .vercel
