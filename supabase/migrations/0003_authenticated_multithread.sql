@@ -145,6 +145,12 @@ declare
   v_review_count integer;
   v_actual_version integer;
   v_revision jsonb;
+  v_revision_thread_id text;
+  v_revision_version integer;
+  v_revision_previous_version integer;
+  v_revision_actor_user_id uuid;
+  v_revision_created_at timestamptz;
+  v_existing_revision public.thread_revisions%rowtype;
   v_analysis_run jsonb;
 begin
   if v_owner_id is null then
@@ -215,15 +221,49 @@ begin
   if v_revision is null or jsonb_typeof(v_revision) <> 'object' then
     raise exception using errcode = '23514', message = 'Aggregate requires a newest revision';
   end if;
-  insert into public.thread_revisions (
-    owner_id, thread_id, id, version, actor_type, actor_user_id, command,
-    change_summary, previous_version, created_at
-  ) values (
-    v_owner_id, p_thread_id, v_revision ->> 'id', (v_revision ->> 'version')::integer,
-    v_revision ->> 'actor_type', nullif(v_revision ->> 'actor_user_id', '')::uuid,
-    v_revision ->> 'command', v_revision ->> 'change_summary',
-    (v_revision ->> 'previous_version')::integer, (v_revision ->> 'created_at')::timestamptz
-  ) on conflict (owner_id, thread_id, id) do nothing;
+  v_revision_thread_id := v_revision ->> 'thread_id';
+  v_revision_version := nullif(v_revision ->> 'version', '')::integer;
+  v_revision_previous_version := nullif(v_revision ->> 'previous_version', '')::integer;
+  v_revision_actor_user_id := nullif(v_revision ->> 'actor_user_id', '')::uuid;
+  v_revision_created_at := nullif(v_revision ->> 'created_at', '')::timestamptz;
+  if v_revision_thread_id is distinct from p_thread_id then
+    raise exception using errcode = '23514', message = 'Newest revision thread identifier does not match aggregate';
+  end if;
+  if v_revision_version is distinct from v_version then
+    raise exception using errcode = '23514', message = 'Newest revision version does not match aggregate';
+  end if;
+  if v_revision_previous_version is distinct from coalesce(p_expected_version, 0) then
+    raise exception using errcode = '23514', message = 'Newest revision predecessor does not match expected version';
+  end if;
+
+  select revision.* into v_existing_revision
+  from public.thread_revisions as revision
+  where revision.owner_id = v_owner_id
+    and revision.thread_id = p_thread_id
+    and (revision.id = v_revision ->> 'id' or revision.version = v_revision_version)
+  limit 1;
+  if found then
+    if v_existing_revision.id is distinct from v_revision ->> 'id'
+      or v_existing_revision.version is distinct from v_revision_version
+      or v_existing_revision.actor_type is distinct from v_revision ->> 'actor_type'
+      or v_existing_revision.actor_user_id is distinct from v_revision_actor_user_id
+      or v_existing_revision.command is distinct from v_revision ->> 'command'
+      or v_existing_revision.change_summary is distinct from v_revision ->> 'change_summary'
+      or v_existing_revision.previous_version is distinct from v_revision_previous_version
+      or v_existing_revision.created_at is distinct from v_revision_created_at then
+      raise exception using errcode = '23505', message = 'Revision identity conflicts with persisted revision';
+    end if;
+  else
+    insert into public.thread_revisions (
+      owner_id, thread_id, id, version, actor_type, actor_user_id, command,
+      change_summary, previous_version, created_at
+    ) values (
+      v_owner_id, p_thread_id, v_revision ->> 'id', v_revision_version,
+      v_revision ->> 'actor_type', v_revision_actor_user_id,
+      v_revision ->> 'command', v_revision ->> 'change_summary',
+      v_revision_previous_version, v_revision_created_at
+    );
+  end if;
 
   v_analysis_run := p_aggregate -> 'analysis_runs' -> -1;
   if v_analysis_run is not null then

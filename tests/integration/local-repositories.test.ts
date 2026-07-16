@@ -56,6 +56,64 @@ describe("local persistence adapters", () => {
     expect(await repository.load(otherOwnerId, firstAggregate.thread.id)).toBeNull();
   });
 
+  it("keeps matching thread IDs independent across owners", async () => {
+    // Given two owners with aggregates that share a thread identifier
+    const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
+    const repository = new LocalJsonThreadRepository(join(directory, "state.json"));
+    const firstAggregate = createAggregateFixture();
+    const otherOwnerId = "22222222-2222-4222-8222-222222222222";
+    const secondAggregate = {
+      ...firstAggregate,
+      thread: {
+        ...firstAggregate.thread,
+        owner_id: otherOwnerId,
+        title: "Other owner's matching identifier",
+      },
+    };
+
+    // When each owner saves the same thread identifier
+    await repository.save(firstAggregate.thread.owner_id, firstAggregate, null);
+    await repository.save(otherOwnerId, secondAggregate, null);
+
+    // Then both owner/thread keys resolve their independent aggregates
+    expect(await repository.load(firstAggregate.thread.owner_id, firstAggregate.thread.id)).toEqual(
+      firstAggregate,
+    );
+    expect(await repository.load(otherOwnerId, secondAggregate.thread.id)).toEqual(
+      secondAggregate,
+    );
+  });
+
+  it("serializes concurrent same-version saves across repository instances", async () => {
+    // Given separate adapters targeting one local state path and competing initial writes
+    const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));
+    const path = join(directory, "state.json");
+    const firstRepository = new LocalJsonThreadRepository(path);
+    const secondRepository = new LocalJsonThreadRepository(path);
+    const aggregate = createAggregateFixture();
+    const competingAggregate = {
+      ...aggregate,
+      thread: { ...aggregate.thread, title: "Competing initial revision" },
+    };
+
+    // When both writers use the same expected version concurrently
+    const outcomes = await Promise.all([
+      firstRepository.save(aggregate.thread.owner_id, aggregate, null),
+      secondRepository.save(aggregate.thread.owner_id, competingAggregate, null),
+    ]);
+
+    // Then exactly one wins, the other observes the saved version, and no rename collision occurs
+    expect(outcomes.filter((outcome) => outcome.kind === "saved")).toHaveLength(1);
+    expect(outcomes.filter((outcome) => outcome.kind === "stale_version")).toEqual([
+      { kind: "stale_version", actual_version: 1 },
+    ]);
+    const loaded = await firstRepository.load(aggregate.thread.owner_id, aggregate.thread.id);
+    expect([
+      canonicalSerialize(aggregate),
+      canonicalSerialize(competingAggregate),
+    ]).toContain(canonicalSerialize(loaded));
+  });
+
   it("preserves the winning revision after a stale optimistic write", async () => {
     // Given one persisted thread and a winning second revision
     const directory = await mkdtemp(join(tmpdir(), "lifethread-repository-"));

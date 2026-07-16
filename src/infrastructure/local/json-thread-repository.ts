@@ -21,6 +21,8 @@ const localThreadEnvelopeSchema = z.object({
 
 type LocalThreadEnvelope = z.infer<typeof localThreadEnvelopeSchema>;
 
+const statePathLocks = new Map<string, Promise<void>>();
+
 const emptyEnvelope: LocalThreadEnvelope = {
   schema_version: "lifethread.local_threads.v1",
   threads: [],
@@ -28,6 +30,24 @@ const emptyEnvelope: LocalThreadEnvelope = {
 
 function isMissingFile(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
+}
+
+async function withStatePathLock<T>(
+  path: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const previous = statePathLocks.get(path) ?? Promise.resolve();
+  const current = previous.then(operation, operation);
+  const next = current.then(
+    () => undefined,
+    () => undefined,
+  );
+  statePathLocks.set(path, next);
+  try {
+    return await current;
+  } finally {
+    if (statePathLocks.get(path) === next) statePathLocks.delete(path);
+  }
 }
 
 export class LocalJsonThreadRepository implements ThreadRepository, ResettableThreadRepository {
@@ -72,37 +92,41 @@ export class LocalJsonThreadRepository implements ThreadRepository, ResettableTh
     if (parsed.thread.owner_id !== ownerId) {
       throw new ThreadOwnerMismatchError(ownerId, parsed.thread.owner_id);
     }
-    const envelope = await this.read();
-    const current = envelope.threads.find(
-      (candidate) => candidate.thread.id === parsed.thread.id,
-    );
-    if (current && current.thread.owner_id !== ownerId) {
-      throw new ThreadOwnerMismatchError(ownerId, current.thread.owner_id);
-    }
-    const actualVersion = current?.thread.version ?? null;
-    if (actualVersion !== expectedVersion) {
-      return { kind: "stale_version", actual_version: actualVersion };
-    }
-    const threads = current
-      ? envelope.threads.map((candidate) => (
-        candidate.thread.id === parsed.thread.id ? parsed : candidate
-      ))
-      : [...envelope.threads, parsed];
-    await this.write({ ...envelope, threads });
-    return { kind: "saved" };
+    return withStatePathLock(this.#path, async () => {
+      const envelope = await this.read();
+      const current = envelope.threads.find(
+        (candidate) => candidate.thread.owner_id === ownerId
+          && candidate.thread.id === parsed.thread.id,
+      );
+      const actualVersion = current?.thread.version ?? null;
+      if (actualVersion !== expectedVersion) {
+        return { kind: "stale_version", actual_version: actualVersion };
+      }
+      const threads = current
+        ? envelope.threads.map((candidate) => (
+          candidate.thread.owner_id === ownerId && candidate.thread.id === parsed.thread.id
+            ? parsed
+            : candidate
+        ))
+        : [...envelope.threads, parsed];
+      await this.write({ ...envelope, threads });
+      return { kind: "saved" };
+    });
   }
 
   async resetOwner(ownerId: string): Promise<void> {
-    const envelope = await this.read();
-    const threads = envelope.threads.filter(
-      (aggregate) => aggregate.thread.owner_id !== ownerId,
-    );
-    if (threads.length === envelope.threads.length) return;
-    if (threads.length === 0) {
-      await rm(this.#path, { force: true });
-      return;
-    }
-    await this.write({ ...envelope, threads });
+    await withStatePathLock(this.#path, async () => {
+      const envelope = await this.read();
+      const threads = envelope.threads.filter(
+        (aggregate) => aggregate.thread.owner_id !== ownerId,
+      );
+      if (threads.length === envelope.threads.length) return;
+      if (threads.length === 0) {
+        await rm(this.#path, { force: true });
+        return;
+      }
+      await this.write({ ...envelope, threads });
+    });
   }
 
   private async read(): Promise<LocalThreadEnvelope> {

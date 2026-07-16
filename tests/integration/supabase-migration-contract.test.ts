@@ -71,6 +71,29 @@ describe("authenticated Supabase persistence contract", () => {
     );
   });
 
+  it("requires a consistent newest revision and rejects divergent revision identity", () => {
+    // Given the aggregate save transaction
+    const functionStart = migration.indexOf(
+      "create or replace function public.save_lifethread_aggregate",
+    );
+    const functionEnd = migration.indexOf("$$;", functionStart);
+    const saveFunction = migration.slice(functionStart, functionEnd);
+    const revisionSectionStart = saveFunction.indexOf("v_revision :=");
+    const revisionSectionEnd = saveFunction.indexOf("v_analysis_run :=", revisionSectionStart);
+    const revisionSection = saveFunction.slice(revisionSectionStart, revisionSectionEnd);
+
+    // When newest revision handling is inspected
+
+    // Then its thread, version, and predecessor match the aggregate and conflicts raise
+    expect(saveFunction).toContain("v_revision_thread_id is distinct from p_thread_id");
+    expect(saveFunction).toContain("v_revision_version is distinct from v_version");
+    expect(saveFunction).toContain(
+      "v_revision_previous_version is distinct from coalesce(p_expected_version, 0)",
+    );
+    expect(saveFunction).toContain("revision identity conflicts with persisted revision");
+    expect(revisionSection).not.toContain("on conflict (owner_id, thread_id, id) do nothing");
+  });
+
   it("uses composite owner keys, Realtime, and private owner-prefixed Storage paths", () => {
     // Given child rows, Realtime, and private evidence objects
     const childOwnerKeys = migration.match(
