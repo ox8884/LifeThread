@@ -77,7 +77,7 @@ export function EmailAuthForm({ mode, locale, redirectPath, dictionary }: EmailA
         {isSubmitting ? dictionary.working : isSignUp ? dictionary.signUp : dictionary.signIn}
       </button>
       <p className="auth-alternate">
-        {isSignUp ? dictionary.haveAccount : dictionary.needAccount} <Link href={alternatePath}>{isSignUp ? dictionary.signIn : dictionary.signUp}</Link>
+        {isSignUp ? dictionary.haveAccount : dictionary.needAccount} <Link className="auth-alternate-link" href={alternatePath}>{isSignUp ? dictionary.signIn : dictionary.signUp}</Link>
       </p>
       <p className="auth-status" role="status" aria-live="polite">{status}</p>
     </form>

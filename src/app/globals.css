@@ -812,6 +812,12 @@ textarea {
   word-break: keep-all;
 }
 
+.auth-alternate-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .auth-status {
   min-height: 1.55em;
   color: var(--danger);
