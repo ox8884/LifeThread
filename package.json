@@ -17,7 +17,8 @@
     "qa:capture": "tsx scripts/qa/capture.ts",
     "demo:preflight": "tsx scripts/demo/preflight.ts",
     "demo:reset": "tsx scripts/demo/reset.ts",
-    "acceptance:audit": "tsx scripts/acceptance/audit.ts"
+    "acceptance:audit": "tsx scripts/acceptance/audit.ts",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.3",
@@ -41,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "jsdom": "29.1.1",
+    "react-doctor": "^0.7.8",
     "react-grab": "0.1.48",
     "react-scan": "0.5.7",
     "tailwindcss": "^4",
