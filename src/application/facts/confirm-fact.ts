@@ -1,22 +1,24 @@
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import type { LifeThreadAggregate } from "@/domain/entities";
-import { userActorForOwner } from "@/domain/actors";
+import { ownsThread, parseAuthenticatedActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 
-type ConfirmFactInput = Readonly<{ fact_id: string; expected_version: number; now: string }>;
+type ConfirmFactInput = Readonly<{ fact_id: string; expected_version: number; now: string; actor?: unknown }>;
 
 export async function confirmFact(
   repository: ThreadRepository,
   input: ConfirmFactInput,
 ) {
+  const actor = parseAuthenticatedActor(input.actor);
+  if (!actor) return { kind: "unauthorized_actor" } as const;
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" } as const;
+  if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) {
     return { kind: "stale_version" } as const;
   }
   const fact = aggregate.facts.find((candidate) => candidate.id === input.fact_id);
   if (!fact) return { kind: "missing_fact" } as const;
-  const actor = userActorForOwner(aggregate.thread.owner_id);
   const version = aggregate.thread.version + 1;
   const updated: LifeThreadAggregate = {
     ...aggregate,

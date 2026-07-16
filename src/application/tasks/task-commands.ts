@@ -4,15 +4,15 @@ import {
   type AggregateMutationResult,
   type TaskMutation,
 } from "@/domain/lifethread-aggregate";
-import { userActorForOwner, type RevisionActor } from "@/domain/actors";
+import { ownsThread, parseAuthenticatedActor, type RevisionActor } from "@/domain/actors";
 import type { CanonicalStatus } from "@/domain/status";
 
 type TaskCommandInput =
-  | Readonly<{ kind: "add"; content: string; expected_version: number; now: string }>
-  | Readonly<{ kind: "edit"; task_id: string; content: string; expected_version: number; now: string }>
-  | Readonly<{ kind: "transition"; task_id: string; status: CanonicalStatus; expected_version: number; now: string }>
-  | Readonly<{ kind: "tombstone" | "restore"; task_id: string; expected_version: number; now: string }>
-  | Readonly<{ kind: "reorder"; task_id: string; position: number; expected_version: number; now: string }>;
+  | Readonly<{ kind: "add"; content: string; expected_version: number; now: string; actor?: unknown }>
+  | Readonly<{ kind: "edit"; task_id: string; content: string; expected_version: number; now: string; actor?: unknown }>
+  | Readonly<{ kind: "transition"; task_id: string; status: CanonicalStatus; expected_version: number; now: string; actor?: unknown }>
+  | Readonly<{ kind: "tombstone" | "restore"; task_id: string; expected_version: number; now: string; actor?: unknown }>
+  | Readonly<{ kind: "reorder"; task_id: string; position: number; expected_version: number; now: string; actor?: unknown }>;
 
 function toMutation(input: TaskCommandInput, actor: RevisionActor): TaskMutation {
   const base = { actor, expected_version: input.expected_version, occurred_at: input.now };
@@ -30,9 +30,12 @@ export async function runTaskCommand(
   repository: ThreadRepository,
   input: TaskCommandInput,
 ): Promise<AggregateMutationResult | Readonly<{ kind: "missing_thread" }>> {
+  const actor = parseAuthenticatedActor(input.actor);
+  if (!actor) return { kind: "rejected", reason: "unauthorized_actor" };
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" };
-  const result = applyTaskMutation(aggregate, toMutation(input, userActorForOwner(aggregate.thread.owner_id)));
+  if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "rejected", reason: "unauthorized_actor" };
+  const result = applyTaskMutation(aggregate, toMutation(input, actor));
   if (result.kind === "rejected") return result;
   const saved = await repository.save(result.aggregate, input.expected_version);
   if (saved.kind === "stale_version") return { kind: "rejected", reason: "stale_version" };

@@ -3,23 +3,26 @@ import type { AnalysisGateway } from "@/application/analysis/analysis-gateway";
 import { reconcileCandidate } from "@/application/analysis/reconcile-candidate";
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import { candidateDeltaSchema } from "@/domain/candidate-delta";
-import { userActorForOwner } from "@/domain/actors";
+import { ownsThread, parseAuthenticatedActor } from "@/domain/actors";
 import type { LifeThreadAggregate } from "@/domain/entities";
 import { detectSourceLanguage, sha256, stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
 const noteSchema = z.string().transform((value) => value.normalize("NFC").trim()).pipe(z.string().min(1).max(50_000));
-type IngestNoteInput = Readonly<{ note: string; locale: Locale; expected_version: number; now: string }>;
+type IngestNoteInput = Readonly<{ note: string; locale: Locale; expected_version: number; now: string; actor?: unknown }>;
 
 export async function ingestNoteEvidence(
   repository: ThreadRepository,
   gateway: AnalysisGateway,
   input: IngestNoteInput,
 ) {
+  const actor = parseAuthenticatedActor(input.actor);
+  if (!actor) return { kind: "unauthorized_actor" } as const;
   const parsed = noteSchema.safeParse(input.note);
   if (!parsed.success) return { kind: "invalid_note" } as const;
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" } as const;
+  if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) return { kind: "stale_version" } as const;
   const checksum = sha256(parsed.data);
   if (aggregate.evidence.some((item) => item.checksum === checksum)) {
@@ -28,7 +31,6 @@ export async function ingestNoteEvidence(
   const evidenceId = stableId("evidence", `${aggregate.thread.id}:${checksum}`);
   const sourceId = stableId("source", evidenceId);
   const version = aggregate.thread.version + 1;
-  const actor = userActorForOwner(aggregate.thread.owner_id);
   const withEvidence: LifeThreadAggregate = {
     ...aggregate,
     thread: { ...aggregate.thread, version, updated_at: input.now },

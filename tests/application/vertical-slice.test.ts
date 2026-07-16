@@ -11,6 +11,9 @@ import { generateDraft } from "@/application/communication/generate-draft";
 import { RecordedAnalysisGateway } from "@/infrastructure/ai/recorded-analysis-gateway";
 import { LocalJsonThreadRepository } from "@/infrastructure/local/json-thread-repository";
 import { canonicalSerialize } from "@/domain/serialization";
+import { recordedFixtureOwnerId } from "@/domain/actors";
+
+const ownerActor = { actor_type: "user", actor_user_id: recordedFixtureOwnerId } as const;
 
 async function createRepository() {
   const directory = await mkdtemp(join(tmpdir(), "lifethread-vertical-"));
@@ -86,6 +89,7 @@ describe("local LifeThread vertical slice", () => {
       status: "pending",
       expected_version: initial.thread.version,
       now: "2026-07-15T12:10:00.000Z",
+      actor: ownerActor,
     });
     expect(accepted.kind).toBe("applied");
     const afterAccept = await repository.load();
@@ -97,6 +101,7 @@ describe("local LifeThread vertical slice", () => {
       status: "completed",
       expected_version: afterAccept.thread.version,
       now: "2026-07-15T12:11:00.000Z",
+      actor: ownerActor,
     });
 
     // Then two revisions persist and AI origin remains historical truth
@@ -122,6 +127,7 @@ describe("local LifeThread vertical slice", () => {
       fact_id: initial.facts[0].id,
       expected_version: initial.thread.version,
       now: "2026-07-15T12:20:00.000Z",
+      actor: ownerActor,
     });
     const confirmed = await repository.load();
     expect(confirmed).not.toBeNull();
@@ -136,6 +142,7 @@ describe("local LifeThread vertical slice", () => {
         locale: "en",
         expected_version: confirmed.thread.version,
         now: "2026-07-15T12:21:00.000Z",
+        actor: ownerActor,
       },
     );
 
@@ -180,6 +187,7 @@ describe("local LifeThread vertical slice", () => {
       status: "completed",
       expected_version: aggregate.thread.version,
       now: "2026-07-15T12:29:00.000Z",
+      actor: ownerActor,
     });
     expect(completion.kind).toBe("applied");
     const afterCompletion = await repository.load();
@@ -194,6 +202,7 @@ describe("local LifeThread vertical slice", () => {
       locale: "ko",
       expected_version: afterCompletion.thread.version,
       now: "2026-07-15T12:30:00.000Z",
+      actor: ownerActor,
     });
 
     // Then the next task is actionable and the localized draft remains unsent

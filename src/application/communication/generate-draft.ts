@@ -1,17 +1,20 @@
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import type { Communication, LifeThreadAggregate } from "@/domain/entities";
-import { userActorForOwner } from "@/domain/actors";
+import { ownsThread, parseAuthenticatedActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
-type GenerateDraftInput = Readonly<{ locale: Locale; expected_version: number; now: string }>;
+type GenerateDraftInput = Readonly<{ locale: Locale; expected_version: number; now: string; actor?: unknown }>;
 
 export async function generateDraft(
   repository: ThreadRepository,
   input: GenerateDraftInput,
 ) {
+  const actor = parseAuthenticatedActor(input.actor);
+  if (!actor) return { kind: "unauthorized_actor" } as const;
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" } as const;
+  if (!ownsThread(actor, aggregate.thread.owner_id)) return { kind: "unauthorized_actor" } as const;
   if (aggregate.thread.version !== input.expected_version) return { kind: "stale_version" } as const;
   const reference = aggregate.source_references[0];
   if (!reference) return { kind: "insufficient_evidence" } as const;
@@ -22,7 +25,6 @@ export async function generateDraft(
     ? `안녕하세요. 현재 목표를 검토하고 있습니다. 다음 단계는 ${firstTask?.content ?? "확인 중"}입니다. 중요한 내용은 회신으로 확인해 주세요.`
     : `Hello, I am reviewing the current goal. The next step is ${firstTask?.content ?? "under review"}. Please confirm any important details in your reply.`;
   const version = aggregate.thread.version + 1;
-  const actor = userActorForOwner(aggregate.thread.owner_id);
   const communication: Communication = {
     id: stableId("communication", `${aggregate.thread.id}:${input.locale}:${version}`),
     thread_id: aggregate.thread.id,

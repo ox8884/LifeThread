@@ -7,6 +7,10 @@ export const revisionActorSchema = z.discriminatedUnion("actor_type", [
 ]);
 
 export type RevisionActor = z.infer<typeof revisionActorSchema>;
+export type AuthenticatedRevisionActor = Exclude<
+  RevisionActor,
+  Readonly<{ actor_type: "recorded_fixture"; actor_user_id: null }>
+>;
 
 export const recordedFixtureOwnerId = "00000000-0000-4000-8000-000000000001";
 export const recordedFixtureActor = {
@@ -14,8 +18,10 @@ export const recordedFixtureActor = {
   actor_user_id: null,
 } as const satisfies RevisionActor;
 
-export function userActorForOwner(actor_user_id: string): RevisionActor {
-  return { actor_type: "user", actor_user_id };
+export function parseAuthenticatedActor(value: unknown): AuthenticatedRevisionActor | null {
+  const parsed = revisionActorSchema.safeParse(value);
+  if (!parsed.success || parsed.data.actor_type === "recorded_fixture") return null;
+  return parsed.data;
 }
 
 export function ownsThread(actor: RevisionActor, ownerId: string): boolean {
