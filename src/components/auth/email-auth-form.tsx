@@ -65,6 +65,25 @@ export function EmailAuthForm({ mode, locale, redirectPath, dictionary }: EmailA
     }
   }
 
+  async function continueWithGoogle(): Promise<void> {
+    setIsSubmitting(true);
+    setStatus("");
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const callbackUrl = new URL("/auth/callback", window.location.origin);
+      callbackUrl.searchParams.set("next", redirectPath);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: callbackUrl.toString() },
+      });
+      if (error) setStatus(errorMessage(error.message, dictionary));
+    } catch (error) {
+      setStatus(error instanceof Error ? errorMessage(error.message, dictionary) : dictionary.unavailable);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   const alternatePath = `/${locale}/${isSignUp ? "sign-in" : "sign-up"}?redirect=${encodeURIComponent(redirectPath)}`;
   return (
     <form className="auth-form" onSubmit={submit}>
@@ -75,6 +94,15 @@ export function EmailAuthForm({ mode, locale, redirectPath, dictionary }: EmailA
       <input id="password" name="password" type="password" autoComplete={isSignUp ? "new-password" : "current-password"} required />
       <button className="button primary" type="submit" disabled={isSubmitting}>
         {isSubmitting ? dictionary.working : isSignUp ? dictionary.signUp : dictionary.signIn}
+      </button>
+      <div className="auth-provider-divider" aria-hidden="true"><span>{dictionary.orContinueWith}</span></div>
+      <button
+        className="button secondary auth-provider-button"
+        type="button"
+        disabled={isSubmitting}
+        onClick={continueWithGoogle}
+      >
+        {dictionary.google}
       </button>
       <p className="auth-alternate">
         {isSignUp ? dictionary.haveAccount : dictionary.needAccount} <Link className="auth-alternate-link" href={alternatePath}>{isSignUp ? dictionary.signIn : dictionary.signUp}</Link>

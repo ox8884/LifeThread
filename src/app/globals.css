@@ -996,6 +996,29 @@ textarea {
   margin-top: 28px;
 }
 
+.auth-provider-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0;
+  color: var(--quiet);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-provider-divider::before,
+.auth-provider-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
+.auth-provider-button {
+  width: 100%;
+}
+
 .auth-form label,
 .auth-free-note,
 .auth-alternate,
