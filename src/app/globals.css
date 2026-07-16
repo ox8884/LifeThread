@@ -13,6 +13,7 @@
   --action-hover: #0f3f2e;
   --action-tint: #e4eee8;
   --focus: #4f806d;
+  --control-border: var(--focus);
   --positive: #247056;
   --warning: #9b6428;
   --warning-tint: #f7ead8;
@@ -56,7 +57,7 @@ summary {
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--focus) 68%, transparent);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
@@ -157,7 +158,7 @@ code {
 input,
 textarea {
   width: 100%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--control-border);
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
@@ -815,7 +816,9 @@ textarea {
 .auth-alternate-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
+  min-width: 44px;
 }
 
 .auth-status {
