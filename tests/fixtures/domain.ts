@@ -2,12 +2,13 @@ import type { CandidateDelta } from "@/domain/candidate-delta";
 import type { LifeThreadAggregate } from "@/domain/entities";
 
 export const fixedNow = "2026-07-15T12:00:00.000Z";
+export const USER_ID = "11111111-1111-4111-8111-111111111111";
 
 export function createAggregateFixture(): LifeThreadAggregate {
   return {
     thread: {
       id: "thread_fixture",
-      demo_user_id: "demo_user",
+      owner_id: USER_ID,
       title: "Study plan",
       goal_text: "한국어와 English를 섞어 학습 계획 만들기",
       goal_confirmed: false,
@@ -63,7 +64,8 @@ export function createAggregateFixture(): LifeThreadAggregate {
         id: "revision_1",
         thread_id: "thread_fixture",
         version: 1,
-        actor: "demo_user",
+        actor_type: "recorded_fixture",
+        actor_user_id: null,
         command: "create_thread",
         change_summary: "Created the thread and preserved the original goal.",
         previous_version: 0,

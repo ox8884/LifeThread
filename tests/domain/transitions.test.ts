@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Task } from "@/domain/entities";
 import { canonicalSerialize } from "@/domain/serialization";
 import { transitionTask } from "@/domain/transitions";
+import { USER_ID } from "@tests/fixtures/domain";
+
+const userActor = { actor_type: "user", actor_user_id: USER_ID } as const;
 
 const proposedTask: Task = {
   id: "task_transition",
@@ -15,6 +18,7 @@ const proposedTask: Task = {
   derivation: "direct",
   source_reference_ids: ["source_goal"],
   confidence: 0.9,
+  analysis_run_id: "analysis_transition",
   user_confirmed: false,
   confirmed_by: null,
   confirmed_at: null,
@@ -25,12 +29,12 @@ const proposedTask: Task = {
 };
 
 describe("task transition policy", () => {
-  it("accepts a proposal through demo_user without changing its origin", () => {
+  it("accepts a proposal through its owner without changing its origin", () => {
     // Given an AI-suggested proposed task
-    // When demo_user accepts it
+    // When its owner accepts it
     const result = transitionTask(proposedTask, {
       kind: "set_status",
-      actor_id: "demo_user",
+      actor: userActor,
       status: "pending",
       occurred_at: "2026-07-15T12:05:00.000Z",
     });
@@ -40,17 +44,17 @@ describe("task transition policy", () => {
     if (result.kind === "applied") {
       expect(result.task.source_type).toBe("ai_suggested");
       expect(result.task.user_confirmed).toBe(true);
-      expect(result.task.confirmed_by).toBe("demo_user");
+      expect(result.task.confirmed_by).toBe(USER_ID);
       expect(result.task.status).toBe("pending");
     }
   });
 
   it("treats user completion of a proposal as explicit confirmation", () => {
     // Given an AI-suggested proposed task
-    // When demo_user completes it from the primary next-action control
+    // When its owner completes it from the primary next-action control
     const result = transitionTask(proposedTask, {
       kind: "set_status",
-      actor_id: "demo_user",
+      actor: userActor,
       status: "completed",
       occurred_at: "2026-07-15T12:05:00.000Z",
     });
@@ -61,7 +65,7 @@ describe("task transition policy", () => {
       expect(result.task.status).toBe("completed");
       expect(result.task.source_type).toBe("ai_suggested");
       expect(result.task.user_confirmed).toBe(true);
-      expect(result.task.confirmed_by).toBe("demo_user");
+      expect(result.task.confirmed_by).toBe(USER_ID);
       expect(result.task.confirmed_at).toBe("2026-07-15T12:05:00.000Z");
     }
   });
@@ -69,10 +73,10 @@ describe("task transition policy", () => {
   it("reopens a completed task and preserves its identity", () => {
     // Given a completed task
     const completed = { ...proposedTask, status: "completed" as const };
-    // When demo_user reopens it
+    // When its owner reopens it
     const result = transitionTask(completed, {
       kind: "set_status",
-      actor_id: "demo_user",
+      actor: userActor,
       status: "in_progress",
       occurred_at: "2026-07-15T12:06:00.000Z",
     });
@@ -85,16 +89,16 @@ describe("task transition policy", () => {
     // Given a proposed task with citations
     const removed = transitionTask(proposedTask, {
       kind: "tombstone",
-      actor_id: "demo_user",
+      actor: userActor,
       occurred_at: "2026-07-15T12:07:00.000Z",
     });
     expect(removed.kind).toBe("applied");
     if (removed.kind !== "applied") return;
 
-    // When demo_user restores the same task
+    // When its owner restores the same task
     const restored = transitionTask(removed.task, {
       kind: "restore",
-      actor_id: "demo_user",
+      actor: userActor,
       occurred_at: "2026-07-15T12:08:00.000Z",
     });
 
@@ -114,13 +118,13 @@ describe("task transition policy", () => {
     // When an invalid waiting state or model-authored acceptance is attempted
     const invalid = transitionTask(proposedTask, {
       kind: "set_status",
-      actor_id: "demo_user",
+      actor: userActor,
       status: "waiting",
       occurred_at: "2026-07-15T12:09:00.000Z",
     });
     const model = transitionTask(proposedTask, {
       kind: "set_status",
-      actor_id: "model",
+      actor: { actor_type: "recorded_fixture", actor_user_id: null },
       status: "pending",
       occurred_at: "2026-07-15T12:09:00.000Z",
     });

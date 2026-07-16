@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { revisionActorSchema } from "@/domain/actors";
 import { canonicalStatusSchema } from "@/domain/status";
 
 const commandBase = {
-  actor_id: z.enum(["demo_user", "model"]),
+  actor: revisionActorSchema,
   occurred_at: z.string().datetime(),
 } as const;
 

@@ -5,7 +5,10 @@ import {
   createAggregateFixture,
   createCandidateFixture,
   fixedNow,
+  USER_ID,
 } from "@tests/fixtures/domain";
+
+const recordedActor = { actor_type: "recorded_fixture", actor_user_id: null } as const;
 
 describe("deterministic CandidateDelta reconciliation", () => {
   it("applies cited proposals as one revision while retaining AI provenance", () => {
@@ -14,7 +17,7 @@ describe("deterministic CandidateDelta reconciliation", () => {
     const candidate = createCandidateFixture();
 
     // When deterministic reconciliation runs
-    const result = reconcileCandidate(aggregate, candidate, fixedNow);
+    const result = reconcileCandidate(aggregate, candidate, fixedNow, recordedActor);
 
     // Then all accepted effects share exactly one new revision
     expect(result.kind).toBe("applied");
@@ -22,7 +25,10 @@ describe("deterministic CandidateDelta reconciliation", () => {
       expect(result.aggregate.thread.version).toBe(2);
       expect(result.aggregate.revisions).toHaveLength(2);
       expect(result.aggregate.tasks[0]?.source_type).toBe("ai_suggested");
+      expect(result.aggregate.tasks[0]?.analysis_run_id).toBe(candidate.analysis_run_id);
+      expect(result.aggregate.tasks[0]?.status).toBe("proposed");
       expect(result.aggregate.tasks[0]?.user_confirmed).toBe(false);
+      expect(result.aggregate.tasks[0]?.confirmed_by).toBeNull();
       expect(result.aggregate.facts[0]?.source_reference_ids).toEqual(["source_goal"]);
       expect(result.aggregate.living_state.occurred_at).toBeNull();
     }
@@ -34,18 +40,19 @@ describe("deterministic CandidateDelta reconciliation", () => {
       createAggregateFixture(),
       createCandidateFixture(),
       fixedNow,
+      recordedActor,
     );
     expect(first.kind).toBe("applied");
     if (first.kind !== "applied") return;
     const before = canonicalSerialize(first.aggregate);
 
     // When the same run or its stale base is submitted again
-    const replay = reconcileCandidate(first.aggregate, createCandidateFixture(), fixedNow);
+    const replay = reconcileCandidate(first.aggregate, createCandidateFixture(), fixedNow, recordedActor);
     const staleCandidate = {
       ...createCandidateFixture(),
       analysis_run_id: "analysis_stale",
     };
-    const stale = reconcileCandidate(first.aggregate, staleCandidate, fixedNow);
+    const stale = reconcileCandidate(first.aggregate, staleCandidate, fixedNow, recordedActor);
 
     // Then neither path writes a revision
     expect(replay.kind).toBe("duplicate");
@@ -70,8 +77,9 @@ describe("deterministic CandidateDelta reconciliation", () => {
           derivation: "direct" as const,
           source_reference_ids: ["source_goal"],
           confidence: 1,
+          analysis_run_id: null,
           user_confirmed: true,
-          confirmed_by: "demo_user" as const,
+          confirmed_by: USER_ID,
           confirmed_at: fixedNow,
           relevant_date: null,
           date_precision: "unknown" as const,
@@ -82,7 +90,7 @@ describe("deterministic CandidateDelta reconciliation", () => {
     };
 
     // When a candidate proposes a contradictory value
-    const result = reconcileCandidate(withConfirmedFact, createCandidateFixture(), fixedNow);
+    const result = reconcileCandidate(withConfirmedFact, createCandidateFixture(), fixedNow, recordedActor);
 
     // Then the confirmed value survives and an unresolved conflict is visible
     expect(result.kind).toBe("applied");
@@ -91,5 +99,19 @@ describe("deterministic CandidateDelta reconciliation", () => {
       expect(result.aggregate.conflicts).toHaveLength(1);
       expect(result.aggregate.conflicts[0]?.status).toBe("unresolved");
     }
+  });
+
+  it("rejects a user or ChatGPT actor that does not own the aggregate", () => {
+    // Given an aggregate owned by the fixture user
+    const aggregate = createAggregateFixture();
+
+    // When another authenticated actor attempts reconciliation
+    const result = reconcileCandidate(aggregate, createCandidateFixture(), fixedNow, {
+      actor_type: "chatgpt_app",
+      actor_user_id: "22222222-2222-4222-8222-222222222222",
+    });
+
+    // Then the aggregate preserves its authenticated boundary
+    expect(result).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
   });
 });

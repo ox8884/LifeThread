@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
+import { ownsThread, type RevisionActor } from "@/domain/actors";
 import type { LifeThreadAggregate, Task, ThreadRevision } from "@/domain/entities";
 import type { CanonicalStatus } from "@/domain/status";
 import { transitionTask } from "@/domain/transitions";
 
 type TaskMutationBase = Readonly<{
-  actor_id: "demo_user";
+  actor: RevisionActor;
   expected_version: number;
   occurred_at: string;
 }>;
@@ -22,7 +23,7 @@ export type AggregateMutationResult =
   | Readonly<{ kind: "applied"; aggregate: LifeThreadAggregate }>
   | Readonly<{
       kind: "rejected";
-      reason: "stale_version" | "task_not_found" | "invalid_transition" | "invalid_input";
+      reason: "stale_version" | "task_not_found" | "invalid_transition" | "invalid_input" | "unauthorized_actor";
     }>;
 
 function revisionId(threadId: string, version: number): string {
@@ -43,7 +44,7 @@ function appendRevision(
     id: revisionId(aggregate.thread.id, version),
     thread_id: aggregate.thread.id,
     version,
-    actor: "demo_user",
+    ...mutation.actor,
     command: `task:${mutation.kind}`,
     change_summary: summary,
     previous_version: aggregate.thread.version,
@@ -64,6 +65,9 @@ export function applyTaskMutation(
   if (mutation.expected_version !== aggregate.thread.version) {
     return { kind: "rejected", reason: "stale_version" };
   }
+  if (!ownsThread(mutation.actor, aggregate.thread.owner_id)) {
+    return { kind: "rejected", reason: "unauthorized_actor" };
+  }
   if (mutation.kind === "add") {
     const content = mutation.content.normalize("NFC").trim();
     if (!content) return { kind: "rejected", reason: "invalid_input" };
@@ -82,8 +86,9 @@ export function applyTaskMutation(
       derivation: "direct",
       source_reference_ids: [],
       confidence: null,
+      analysis_run_id: null,
       user_confirmed: true,
-      confirmed_by: "demo_user",
+      confirmed_by: mutation.actor.actor_user_id,
       confirmed_at: mutation.occurred_at,
       deleted_at: null,
       deleted_by: null,
@@ -106,8 +111,9 @@ export function applyTaskMutation(
       updated = {
         ...task,
         content,
+        analysis_run_id: null,
         user_confirmed: true,
-        confirmed_by: "demo_user",
+        confirmed_by: mutation.actor.actor_user_id,
         confirmed_at: mutation.occurred_at,
         updated_at: mutation.occurred_at,
       };
@@ -116,7 +122,7 @@ export function applyTaskMutation(
     case "transition": {
       const result = transitionTask(task, {
         kind: "set_status",
-        actor_id: mutation.actor_id,
+        actor: mutation.actor,
         status: mutation.status,
         occurred_at: mutation.occurred_at,
       });
@@ -129,7 +135,7 @@ export function applyTaskMutation(
     case "tombstone": {
       const result = transitionTask(task, {
         kind: "tombstone",
-        actor_id: mutation.actor_id,
+        actor: mutation.actor,
         occurred_at: mutation.occurred_at,
       });
       if (result.kind === "rejected") {
@@ -141,7 +147,7 @@ export function applyTaskMutation(
     case "restore": {
       const result = transitionTask(task, {
         kind: "restore",
-        actor_id: mutation.actor_id,
+        actor: mutation.actor,
         occurred_at: mutation.occurred_at,
       });
       if (result.kind === "rejected") {

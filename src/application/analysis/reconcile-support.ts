@@ -12,6 +12,7 @@ export type ReconciliationResult =
         | "cross_thread"
         | "missing_source"
         | "stale_version"
+        | "unauthorized_actor"
         | "unauthorized_operation";
     }>;
 

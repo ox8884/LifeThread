@@ -3,6 +3,7 @@ import type { AnalysisGateway } from "@/application/analysis/analysis-gateway";
 import { reconcileCandidate } from "@/application/analysis/reconcile-candidate";
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import { candidateDeltaSchema } from "@/domain/candidate-delta";
+import { userActorForOwner } from "@/domain/actors";
 import type { LifeThreadAggregate } from "@/domain/entities";
 import { detectSourceLanguage, sha256, stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
@@ -27,6 +28,7 @@ export async function ingestNoteEvidence(
   const evidenceId = stableId("evidence", `${aggregate.thread.id}:${checksum}`);
   const sourceId = stableId("source", evidenceId);
   const version = aggregate.thread.version + 1;
+  const actor = userActorForOwner(aggregate.thread.owner_id);
   const withEvidence: LifeThreadAggregate = {
     ...aggregate,
     thread: { ...aggregate.thread, version, updated_at: input.now },
@@ -59,7 +61,7 @@ export async function ingestNoteEvidence(
       id: stableId("revision", `${aggregate.thread.id}:${version}`),
       thread_id: aggregate.thread.id,
       version,
-      actor: "demo_user",
+      ...actor,
       command: "ingest_note_evidence",
       change_summary: "Preserved one original evidence note and its locator.",
       previous_version: aggregate.thread.version,
@@ -74,7 +76,7 @@ export async function ingestNoteEvidence(
   });
   const candidate = candidateDeltaSchema.safeParse(rawCandidate);
   if (!candidate.success) return { kind: "analysis_rejected" } as const;
-  const reconciled = reconcileCandidate(withEvidence, candidate.data, input.now);
+  const reconciled = reconcileCandidate(withEvidence, candidate.data, input.now, gateway.actor);
   if (reconciled.kind !== "applied") return { kind: "analysis_rejected" } as const;
   const saved = await repository.save(reconciled.aggregate, input.expected_version);
   return saved.kind === "saved"

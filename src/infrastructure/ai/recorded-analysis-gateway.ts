@@ -6,6 +6,7 @@ import {
   candidateDeltaSchema,
   type CandidateDelta,
 } from "@/domain/candidate-delta";
+import { recordedFixtureActor } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 
 function initialOperations(request: AnalysisRequest): CandidateDelta["operations"] {
@@ -115,6 +116,8 @@ function evidenceOperations(request: AnalysisRequest): CandidateDelta["operation
 }
 
 export class RecordedAnalysisGateway implements AnalysisGateway {
+  readonly actor = recordedFixtureActor;
+
   async analyze(request: AnalysisRequest): Promise<unknown> {
     const revision = request.aggregate.revisions.at(-1);
     if (!revision) throw new MissingRevisionError();

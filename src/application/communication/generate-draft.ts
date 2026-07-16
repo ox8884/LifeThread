@@ -1,5 +1,6 @@
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import type { Communication, LifeThreadAggregate } from "@/domain/entities";
+import { userActorForOwner } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
@@ -21,6 +22,7 @@ export async function generateDraft(
     ? `안녕하세요. 현재 목표를 검토하고 있습니다. 다음 단계는 ${firstTask?.content ?? "확인 중"}입니다. 중요한 내용은 회신으로 확인해 주세요.`
     : `Hello, I am reviewing the current goal. The next step is ${firstTask?.content ?? "under review"}. Please confirm any important details in your reply.`;
   const version = aggregate.thread.version + 1;
+  const actor = userActorForOwner(aggregate.thread.owner_id);
   const communication: Communication = {
     id: stableId("communication", `${aggregate.thread.id}:${input.locale}:${version}`),
     thread_id: aggregate.thread.id,
@@ -40,7 +42,7 @@ export async function generateDraft(
       id: stableId("revision", `${aggregate.thread.id}:${version}`),
       thread_id: aggregate.thread.id,
       version,
-      actor: "demo_user",
+      ...actor,
       command: "generate_draft",
       change_summary: "Created a cited draft without sending it.",
       previous_version: aggregate.thread.version,

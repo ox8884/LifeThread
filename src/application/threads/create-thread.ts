@@ -3,13 +3,14 @@ import type { AnalysisGateway } from "@/application/analysis/analysis-gateway";
 import { reconcileCandidate } from "@/application/analysis/reconcile-candidate";
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import { candidateDeltaSchema } from "@/domain/candidate-delta";
+import { recordedFixtureOwnerId, type RevisionActor } from "@/domain/actors";
 import type { LifeThreadAggregate } from "@/domain/entities";
 import { detectSourceLanguage, sha256, stableId } from "@/domain/identity";
 import type { Locale } from "@/i18n/locales";
 
 const goalSchema = z.string().transform((value) => value.normalize("NFC").trim()).pipe(z.string().min(1).max(2_000));
 
-type CreateThreadInput = Readonly<{ goal: string; locale: Locale; now: string }>;
+type CreateThreadInput = Readonly<{ goal: string; locale: Locale; now: string; owner_id?: string }>;
 type CreateThreadDependencies = Readonly<{
   repository: ThreadRepository;
   gateway: AnalysisGateway;
@@ -21,15 +22,20 @@ export type CreateThreadResult =
   | Readonly<{ kind: "already_exists" }>
   | Readonly<{ kind: "analysis_rejected" }>;
 
-function initialAggregate(goal: string, now: string): LifeThreadAggregate {
-  const threadId = stableId("thread", `demo_user:${goal}`);
+function initialAggregate(
+  goal: string,
+  now: string,
+  ownerId: string,
+  actor: RevisionActor,
+): LifeThreadAggregate {
+  const threadId = stableId("thread", `${ownerId}:${goal}`);
   const evidenceId = stableId("evidence", `${threadId}:goal`);
   const sourceId = "source_goal";
   const digest = sha256(goal);
   return {
     thread: {
       id: threadId,
-      demo_user_id: "demo_user",
+      owner_id: ownerId,
       title: goal.length > 72 ? `${goal.slice(0, 69)}...` : goal,
       goal_text: goal,
       goal_confirmed: false,
@@ -80,7 +86,7 @@ function initialAggregate(goal: string, now: string): LifeThreadAggregate {
       id: "revision_1",
       thread_id: threadId,
       version: 1,
-      actor: "demo_user",
+      ...actor,
       command: "create_thread",
       change_summary: "Created the thread and preserved the original goal.",
       previous_version: 0,
@@ -99,7 +105,8 @@ export async function createThread(
   const parsedGoal = goalSchema.safeParse(input.goal);
   if (!parsedGoal.success) return { kind: "invalid_goal" };
   if (await dependencies.repository.load()) return { kind: "already_exists" };
-  const initial = initialAggregate(parsedGoal.data, input.now);
+  const ownerId = input.owner_id ?? recordedFixtureOwnerId;
+  const initial = initialAggregate(parsedGoal.data, input.now, ownerId, dependencies.gateway.actor);
   const rawCandidate = await dependencies.gateway.analyze({
     aggregate: initial,
     locale: input.locale,
@@ -108,7 +115,7 @@ export async function createThread(
   });
   const candidate = candidateDeltaSchema.safeParse(rawCandidate);
   if (!candidate.success) return { kind: "analysis_rejected" };
-  const reconciliation = reconcileCandidate(initial, candidate.data, input.now);
+  const reconciliation = reconcileCandidate(initial, candidate.data, input.now, dependencies.gateway.actor);
   if (reconciliation.kind !== "applied") return { kind: "analysis_rejected" };
   const saved = await dependencies.repository.save(reconciliation.aggregate, null);
   if (saved.kind === "stale_version") return { kind: "already_exists" };

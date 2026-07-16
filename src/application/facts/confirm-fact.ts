@@ -1,5 +1,6 @@
 import type { ThreadRepository } from "@/application/threads/thread-repository";
 import type { LifeThreadAggregate } from "@/domain/entities";
+import { userActorForOwner } from "@/domain/actors";
 import { stableId } from "@/domain/identity";
 
 type ConfirmFactInput = Readonly<{ fact_id: string; expected_version: number; now: string }>;
@@ -15,6 +16,7 @@ export async function confirmFact(
   }
   const fact = aggregate.facts.find((candidate) => candidate.id === input.fact_id);
   if (!fact) return { kind: "missing_fact" } as const;
+  const actor = userActorForOwner(aggregate.thread.owner_id);
   const version = aggregate.thread.version + 1;
   const updated: LifeThreadAggregate = {
     ...aggregate,
@@ -23,7 +25,7 @@ export async function confirmFact(
       ...candidate,
       status: "pending",
       user_confirmed: true,
-      confirmed_by: "demo_user",
+      confirmed_by: actor.actor_user_id,
       confirmed_at: input.now,
       updated_at: input.now,
     } : candidate),
@@ -31,7 +33,7 @@ export async function confirmFact(
       id: stableId("revision", `${aggregate.thread.id}:${version}`),
       thread_id: aggregate.thread.id,
       version,
-      actor: "demo_user",
+      ...actor,
       command: "confirm_fact",
       change_summary: "Confirmed one cited fact.",
       previous_version: aggregate.thread.version,

@@ -4,6 +4,7 @@ import {
   type AggregateMutationResult,
   type TaskMutation,
 } from "@/domain/lifethread-aggregate";
+import { userActorForOwner, type RevisionActor } from "@/domain/actors";
 import type { CanonicalStatus } from "@/domain/status";
 
 type TaskCommandInput =
@@ -13,8 +14,8 @@ type TaskCommandInput =
   | Readonly<{ kind: "tombstone" | "restore"; task_id: string; expected_version: number; now: string }>
   | Readonly<{ kind: "reorder"; task_id: string; position: number; expected_version: number; now: string }>;
 
-function toMutation(input: TaskCommandInput): TaskMutation {
-  const base = { actor_id: "demo_user" as const, expected_version: input.expected_version, occurred_at: input.now };
+function toMutation(input: TaskCommandInput, actor: RevisionActor): TaskMutation {
+  const base = { actor, expected_version: input.expected_version, occurred_at: input.now };
   switch (input.kind) {
     case "add": return { ...base, kind: "add", content: input.content };
     case "edit": return { ...base, kind: "edit", task_id: input.task_id, content: input.content };
@@ -31,7 +32,7 @@ export async function runTaskCommand(
 ): Promise<AggregateMutationResult | Readonly<{ kind: "missing_thread" }>> {
   const aggregate = await repository.load();
   if (!aggregate) return { kind: "missing_thread" };
-  const result = applyTaskMutation(aggregate, toMutation(input));
+  const result = applyTaskMutation(aggregate, toMutation(input, userActorForOwner(aggregate.thread.owner_id)));
   if (result.kind === "rejected") return result;
   const saved = await repository.save(result.aggregate, input.expected_version);
   if (saved.kind === "stale_version") return { kind: "rejected", reason: "stale_version" };

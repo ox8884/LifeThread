@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { revisionActorSchema } from "@/domain/actors";
 import { datePrecisionSchema, nullableTimestampSchema, timestampSchema } from "@/domain/entity-foundations";
 import { provenanceSchema } from "@/domain/provenance";
 import {
@@ -12,7 +13,7 @@ export { datePrecisionSchema } from "@/domain/entity-foundations";
 export const lifeThreadSchema = z
   .object({
     id: z.string().min(1),
-    demo_user_id: z.literal("demo_user"),
+    owner_id: z.string().uuid(),
     title: z.string().min(1),
     goal_text: z.string().min(1).max(2_000),
     desired_outcome: z.string().min(1).nullable().optional(),
@@ -36,7 +37,7 @@ export const taskSchema = z
     position: z.number().int().nonnegative(),
     ...provenanceSchema.shape,
     deleted_at: nullableTimestampSchema,
-    deleted_by: z.literal("demo_user").nullable(),
+    deleted_by: z.string().uuid().nullable(),
     created_at: timestampSchema,
     updated_at: timestampSchema,
   })
@@ -133,18 +134,19 @@ export const conflictSchema = z
   })
   .strict();
 
-export const revisionSchema = z
+const revisionDetailsSchema = z
   .object({
     id: z.string().min(1),
     thread_id: z.string().min(1),
     version: z.number().int().positive(),
-    actor: z.enum(["demo_user", "recorded_fixture"]),
     command: z.string().min(1),
     change_summary: z.string().min(1),
     previous_version: z.number().int().nonnegative(),
     created_at: timestampSchema,
   })
   .strict();
+
+export const revisionSchema = revisionActorSchema.and(revisionDetailsSchema);
 
 export const communicationSchema = z
   .object({
@@ -187,7 +189,7 @@ export const analysisRunSchema = z
   })
   .strict();
 
-export const userCorrectionSchema = z
+const userCorrectionDetailsSchema = z
   .object({
     id: z.string().min(1),
     thread_id: z.string().min(1),
@@ -195,12 +197,13 @@ export const userCorrectionSchema = z
     field: z.string().min(1),
     old_value: z.string(),
     new_value: z.string(),
-    actor: z.literal("demo_user"),
     source_reference_ids: z.array(z.string().min(1)),
     revision_id: z.string().min(1),
     created_at: timestampSchema,
   })
   .strict();
+
+export const userCorrectionSchema = revisionActorSchema.and(userCorrectionDetailsSchema);
 
 export const livingStateSchema = z
   .object({

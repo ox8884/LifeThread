@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import en from "../../messages/en.json";
 import ko from "../../messages/ko.json";
 import { getDictionary, isLocale, otherLocale } from "@/i18n/locales";
-import { missingLiveEnvironment } from "@/config/env";
+import { missingRuntimeEnvironment } from "@/config/env";
 
 describe("foundation configuration", () => {
   it("keeps English and Korean dictionaries structurally identical", () => {
@@ -17,11 +17,10 @@ describe("foundation configuration", () => {
     expect(otherLocale("en")).toBe("ko");
   });
 
-  it("names every missing live credential without reading content", () => {
-    expect(missingLiveEnvironment({})).toEqual([
+  it("names only the public Supabase runtime contract without reading content", () => {
+    expect(missingRuntimeEnvironment({})).toEqual([
       "NEXT_PUBLIC_SUPABASE_URL",
-      "SUPABASE_SERVICE_ROLE_KEY",
-      "OPENAI_API_KEY",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
     ]);
   });
 });

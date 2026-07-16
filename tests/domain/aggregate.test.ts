@@ -6,7 +6,11 @@ import {
   createAggregateFixture,
   createCandidateFixture,
   fixedNow,
+  USER_ID,
 } from "@tests/fixtures/domain";
+
+const recordedActor = { actor_type: "recorded_fixture", actor_user_id: null } as const;
+const userActor = { actor_type: "user", actor_user_id: USER_ID } as const;
 
 describe("LifeThread aggregate task commands", () => {
   it("emits one revision for a human task transition", () => {
@@ -15,6 +19,7 @@ describe("LifeThread aggregate task commands", () => {
       createAggregateFixture(),
       createCandidateFixture(),
       fixedNow,
+      recordedActor,
     );
     expect(reconciled.kind).toBe("applied");
     if (reconciled.kind !== "applied") return;
@@ -22,12 +27,12 @@ describe("LifeThread aggregate task commands", () => {
     expect(task).toBeDefined();
     if (!task) return;
 
-    // When demo_user accepts it at the expected version
+    // When its owner accepts it at the expected version
     const result = applyTaskMutation(reconciled.aggregate, {
       kind: "transition",
       task_id: task.id,
       status: "pending",
-      actor_id: "demo_user",
+      actor: userActor,
       expected_version: 2,
       occurred_at: "2026-07-15T12:10:00.000Z",
     });
@@ -50,7 +55,7 @@ describe("LifeThread aggregate task commands", () => {
     const result = applyTaskMutation(aggregate, {
       kind: "add",
       content: "A stale task",
-      actor_id: "demo_user",
+      actor: userActor,
       expected_version: 0,
       occurred_at: fixedNow,
     });
@@ -58,5 +63,22 @@ describe("LifeThread aggregate task commands", () => {
     // Then no state or revision is emitted
     expect(result).toEqual({ kind: "rejected", reason: "stale_version" });
     expect(canonicalSerialize(aggregate)).toBe(before);
+  });
+
+  it("rejects a user mutation from a different owner", () => {
+    // Given an aggregate with a different authenticated owner
+    const aggregate = createAggregateFixture();
+
+    // When another user tries to add a task at the current version
+    const result = applyTaskMutation(aggregate, {
+      kind: "add",
+      content: "A cross-owner task",
+      actor: { actor_type: "user", actor_user_id: "22222222-2222-4222-8222-222222222222" },
+      expected_version: aggregate.thread.version,
+      occurred_at: fixedNow,
+    });
+
+    // Then the aggregate rejects the unowned write
+    expect(result).toEqual({ kind: "rejected", reason: "unauthorized_actor" });
   });
 });

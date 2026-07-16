@@ -17,14 +17,12 @@
     "qa:capture": "tsx scripts/qa/capture.ts",
     "demo:preflight": "tsx scripts/demo/preflight.ts",
     "demo:reset": "tsx scripts/demo/reset.ts",
-    "ai:smoke": "tsx scripts/ai/smoke.ts",
     "acceptance:audit": "tsx scripts/acceptance/audit.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.6",
     "next": "16.2.10",
     "next-intl": "4.13.2",
-    "openai": "6.47.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "4.4.3"

@@ -9,9 +9,12 @@ import {
 } from "@/domain/candidate-delta";
 import {
   lifeThreadSchema,
+  lifeThreadAggregateSchema,
+  revisionSchema,
   type LifeThreadAggregate,
 } from "@/domain/entities";
 import { canonicalSerialize } from "@/domain/serialization";
+import { createAggregateFixture, USER_ID } from "@tests/fixtures/domain";
 
 const validCandidate = {
   schema_version: "lifethread.candidate_delta.v1",
@@ -73,7 +76,7 @@ describe("canonical domain contracts", () => {
     // Given a smallest valid thread
     const thread = {
       id: "thread_contract",
-      demo_user_id: "demo_user",
+      owner_id: USER_ID,
       title: "언어와 상관없는 목표",
       goal_text: "Build a mixed-language routine 건강하게",
       goal_confirmed: false,
@@ -124,7 +127,7 @@ describe("canonical domain contracts", () => {
     const first = {
       thread: {
         id: "thread_contract",
-        demo_user_id: "demo_user",
+        owner_id: USER_ID,
         title: "Unknown date",
         goal_text: "Plan without inventing a date",
         goal_confirmed: false,
@@ -162,5 +165,34 @@ describe("canonical domain contracts", () => {
     // Then bytes and null date semantics remain stable
     expect(canonicalSerialize(first)).toBe(canonicalSerialize(first));
     expect(canonicalSerialize(first)).toContain('"occurred_at":null');
+  });
+
+  it("requires an owning user for aggregates and closed revision actors", () => {
+    // Given a fixture owned by one authenticated user and a user revision
+    const fixture = createAggregateFixture();
+    const userRevision = {
+      id: "revision_user",
+      thread_id: fixture.thread.id,
+      version: 2,
+      actor_type: "user",
+      actor_user_id: USER_ID,
+      command: "task:add",
+      change_summary: "Added one task.",
+      previous_version: 1,
+      created_at: "2026-07-15T12:01:00.000Z",
+    };
+
+    // When domain boundaries parse the authenticated state
+    // Then ownership and the actor discriminant are preserved together
+    expect(lifeThreadAggregateSchema.parse(fixture).thread.owner_id).toBe(USER_ID);
+    expect(revisionSchema.parse(userRevision)).toMatchObject({
+      actor_type: "user",
+      actor_user_id: USER_ID,
+    });
+    expect(() => revisionSchema.parse({
+      ...userRevision,
+      actor_type: "chatgpt_app",
+      actor_user_id: null,
+    })).toThrow();
   });
 });

@@ -1,3 +1,4 @@
+import type { RevisionActor } from "@/domain/actors";
 import type { LifeThreadAggregate } from "@/domain/entities";
 import type { Locale } from "@/i18n/locales";
 
@@ -9,5 +10,6 @@ export type AnalysisRequest = Readonly<{
 }>;
 
 export interface AnalysisGateway {
+  readonly actor: RevisionActor;
   analyze(request: AnalysisRequest): Promise<unknown>;
 }

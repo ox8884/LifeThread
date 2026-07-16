@@ -1,10 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { missingLiveEnvironment } from "../../src/config/env";
+import { missingRuntimeEnvironment } from "../../src/config/env";
 
 if (process.env["LIFETHREAD_LIVE_INTEGRATION"] === "1") {
-  const missing = missingLiveEnvironment(process.env).filter(
-    (name) => name !== "OPENAI_API_KEY",
-  );
+  const missing = missingRuntimeEnvironment(process.env);
   if (missing.length > 0) {
     console.error(`INTEGRATION_MISSING ${missing.join(",")}`);
     process.exitCode = 1;

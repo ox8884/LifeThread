@@ -1,4 +1,5 @@
 import type { CandidateDelta } from "@/domain/candidate-delta";
+import { canReconcileThread, type RevisionActor } from "@/domain/actors";
 import type {
   Conflict,
   Fact,
@@ -20,10 +21,10 @@ export function reconcileCandidate(
   aggregate: LifeThreadAggregate,
   candidate: CandidateDelta,
   now: string,
+  actor: RevisionActor,
 ): ReconciliationResult {
-  if (candidate.thread_id !== aggregate.thread.id) {
-    return { kind: "rejected", reason: "cross_thread" };
-  }
+  if (candidate.thread_id !== aggregate.thread.id) return { kind: "rejected", reason: "cross_thread" };
+  if (!canReconcileThread(actor, aggregate.thread.owner_id)) return { kind: "rejected", reason: "unauthorized_actor" };
   if (!sourcesResolve(aggregate, candidate)) {
     return { kind: "rejected", reason: "missing_source" };
   }
@@ -68,6 +69,7 @@ export function reconcileCandidate(
               : {}),
             source_reference_ids: operation.source_reference_ids,
             confidence: operation.confidence,
+            analysis_run_id: candidate.analysis_run_id,
             user_confirmed: false,
             confirmed_by: null,
             confirmed_at: null,
@@ -92,6 +94,7 @@ export function reconcileCandidate(
             : {}),
           source_reference_ids: operation.source_reference_ids,
           confidence: operation.confidence,
+          analysis_run_id: candidate.analysis_run_id,
           user_confirmed: false,
           confirmed_by: null,
           confirmed_at: null,
@@ -130,6 +133,7 @@ export function reconcileCandidate(
               : {}),
             source_reference_ids: operation.source_reference_ids,
             confidence: operation.confidence,
+            analysis_run_id: candidate.analysis_run_id,
             user_confirmed: false,
             confirmed_by: null,
             confirmed_at: null,
@@ -228,7 +232,7 @@ export function reconcileCandidate(
           id: revisionId,
           thread_id: aggregate.thread.id,
           version: nextVersion,
-          actor: "recorded_fixture",
+          ...actor,
           command: `reconcile:${candidate.analysis_reason}`,
           change_summary: candidate.change_explanation,
           previous_version: aggregate.thread.version,

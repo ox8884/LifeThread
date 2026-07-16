@@ -26,7 +26,7 @@ export function transitionTask(
   task: Task,
   command: TaskCommand,
 ): TaskTransitionResult {
-  if (command.actor_id !== "demo_user") {
+  if (command.actor.actor_type === "recorded_fixture") {
     return { kind: "rejected", reason: "unauthorized_actor" };
   }
 
@@ -43,7 +43,7 @@ export function transitionTask(
           ...task,
           status: command.status,
           user_confirmed: task.user_confirmed || confirmingProposal,
-          confirmed_by: confirmingProposal ? "demo_user" : task.confirmed_by,
+          confirmed_by: confirmingProposal ? command.actor.actor_user_id : task.confirmed_by,
           confirmed_at: confirmingProposal ? command.occurred_at : task.confirmed_at,
           updated_at: command.occurred_at,
         },
@@ -56,7 +56,7 @@ export function transitionTask(
         task: {
           ...task,
           deleted_at: command.occurred_at,
-          deleted_by: "demo_user",
+          deleted_by: command.actor.actor_user_id,
           updated_at: command.occurred_at,
         },
       };

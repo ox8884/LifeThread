@@ -8,6 +8,8 @@ import {
   fixedNow,
 } from "@tests/fixtures/domain";
 
+const recordedActor = { actor_type: "recorded_fixture", actor_user_id: null } as const;
+
 describe("CandidateDelta adversarial boundary", () => {
   it("rejects injection-shaped actions, confirmation, and unknown fields", () => {
     // Given a valid CandidateDelta envelope
@@ -71,6 +73,7 @@ describe("CandidateDelta adversarial boundary", () => {
       aggregate,
       { ...createCandidateFixture(), thread_id: "thread_other" },
       fixedNow,
+      recordedActor,
     );
     const tombstoneCandidate = {
       ...createCandidateFixture(),
@@ -83,7 +86,7 @@ describe("CandidateDelta adversarial boundary", () => {
         source_reference_ids: ["source_goal"],
       }],
     };
-    const tombstone = reconcileCandidate(aggregate, tombstoneCandidate, fixedNow);
+    const tombstone = reconcileCandidate(aggregate, tombstoneCandidate, fixedNow, recordedActor);
 
     // Then both are rejected with no mutation
     expect(crossThread.kind).toBe("rejected");
