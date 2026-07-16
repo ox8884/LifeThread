@@ -2,6 +2,11 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
+test.skip(
+  process.env["LIFETHREAD_E2E_AUTHENTICATED_SESSION"] !== "true",
+  "Requires a live Docker Supabase instance and authenticated session fixture; unavailable in this environment.",
+);
+
 test.beforeEach(() => {
   execFileSync(process.execPath, ["--import", "tsx", "scripts/demo/reset.ts"], {
     cwd: process.cwd(),

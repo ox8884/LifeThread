@@ -20,3 +20,9 @@ export function missingRuntimeEnvironment(
   if (result.success) return [];
   return result.error.issues.map((issue) => issue.path.join("."));
 }
+
+export function hasRuntimeEnvironment(
+  environment: Readonly<Record<string, string | undefined>>,
+): boolean {
+  return runtimeEnvironmentSchema.safeParse(environment).success;
+}

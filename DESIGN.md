@@ -67,7 +67,7 @@ Use semantic headings, landmarks, forms, labels, buttons, lists, and native `det
 
 ## 9. Truthfulness and accepted debt
 
-The experience is persistently labeled as a private local demo using a recorded deterministic AI fixture. It does not imply public sharing, production authentication, collaboration, live autonomous execution, or external message sending. High-stakes information remains subject to operator verification.
+The experience is persistently labeled as a private workspace using a recorded deterministic AI fixture. When Supabase runtime configuration is present, free email/password authentication and OAuth consent use one verified identity; it does not imply public sharing, collaboration, live autonomous execution, or external message sending. High-stakes information remains subject to operator verification.
 
 Accepted MVP debt: one demo user, one canonical thread, local recorded AI output, no public sharing, and no production-grade file upload pipeline. Those limitations belong in secondary disclosure, not in the primary task flow.
 

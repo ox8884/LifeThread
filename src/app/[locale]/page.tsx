@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDictionary, isLocale, otherLocale } from "@/i18n/locales";
-import { createThreadAction, resetDemoAction } from "@/app/[locale]/actions";
+import { createThreadAction } from "@/app/[locale]/actions";
 import { getThread } from "@/application/threads/get-thread";
 import { listThreads } from "@/application/threads/list-threads";
-import { getRuntimeRepository } from "@/infrastructure/runtime";
+import { getAuthenticatedRuntimeRepository } from "@/infrastructure/runtime";
 import { Workspace } from "@/components/threads/workspace";
-import { recordedFixtureOwnerId } from "@/domain/actors";
+import { hasRuntimeEnvironment } from "@/config/env";
+import { AuthRequiredError, requireUser } from "@/infrastructure/auth/require-user";
+import { createServerSupabaseClient } from "@/infrastructure/supabase/server-client";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +25,20 @@ export default async function LocalePage({ params, searchParams }: LocalePagePro
     || (Array.isArray(actionErrorValue) && actionErrorValue.includes("1"));
   const dictionary = getDictionary(locale);
   const alternateLocale = otherLocale(locale);
-  const repository = getRuntimeRepository();
-  const summaries = await listThreads(repository, recordedFixtureOwnerId);
+  if (!hasRuntimeEnvironment(process.env)) redirect(`/${locale}/sign-in?redirect=${encodeURIComponent(`/${locale}`)}`);
+  const supabase = await createServerSupabaseClient();
+  let ownerId: string;
+  try {
+    ownerId = await requireUser(supabase, { locale, redirect: `/${locale}` });
+  } catch (error) {
+    if (error instanceof AuthRequiredError) redirect(error.signInPath);
+    throw error;
+  }
+  const repository = getAuthenticatedRuntimeRepository(supabase);
+  const summaries = await listThreads(repository, ownerId);
   const summary = summaries[0];
   const aggregate = summary
-    ? await getThread(repository, recordedFixtureOwnerId, summary.id)
+    ? await getThread(repository, ownerId, summary.id)
     : null;
 
   if (aggregate) {
@@ -81,9 +92,6 @@ export default async function LocalePage({ params, searchParams }: LocalePagePro
               <p>{dictionary.demoLabel}</p>
               <p>{dictionary.privacyLabel}</p>
               <p>{dictionary.sendingLabel}</p>
-              <form action={resetDemoAction}>
-                <button className="button quiet" type="submit">{dictionary.resetDemo}</button>
-              </form>
             </div>
           </details>
         </section>

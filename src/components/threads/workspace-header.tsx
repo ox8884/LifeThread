@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { resetDemoAction, startFreshAction } from "@/app/[locale]/actions";
 import type { Dictionary, Locale } from "@/i18n/locales";
 import { otherLocale } from "@/i18n/locales";
 
@@ -28,12 +27,6 @@ export function WorkspaceHeader({ locale, dictionary }: WorkspaceHeaderProps) {
             <p>{dictionary.demoLabel}</p>
             <p>{dictionary.privacyLabel}</p>
             <p>{dictionary.sendingLabel}</p>
-            <form action={startFreshAction}>
-              <button className="button quiet" type="submit">{dictionary.startFresh}</button>
-            </form>
-            <form action={resetDemoAction}>
-              <button className="button quiet" type="submit">{dictionary.resetDemo}</button>
-            </form>
           </div>
         </details>
       </div>

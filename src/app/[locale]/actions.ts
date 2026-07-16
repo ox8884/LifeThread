@@ -4,16 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { generateDraft } from "@/application/communication/generate-draft";
-import { resetDemo } from "@/application/demo/reset-demo";
 import { ingestNoteEvidence } from "@/application/evidence/ingest-evidence";
 import { confirmFact } from "@/application/facts/confirm-fact";
 import { runTaskCommand } from "@/application/tasks/task-commands";
 import { createThread } from "@/application/threads/create-thread";
-import { recordedFixtureOwnerId } from "@/domain/actors";
 import { canonicalStatusSchema } from "@/domain/status";
 import { RecordedAnalysisGateway } from "@/infrastructure/ai/recorded-analysis-gateway";
-import { getRuntimeRepository } from "@/infrastructure/runtime";
+import { getAuthenticatedRuntimeRepository } from "@/infrastructure/runtime";
 import { isLocale, type Locale } from "@/i18n/locales";
+import { hasRuntimeEnvironment } from "@/config/env";
+import { AuthRequiredError, requireUser } from "@/infrastructure/auth/require-user";
+import { createServerSupabaseClient } from "@/infrastructure/supabase/server-client";
 
 const integerSchema = z.coerce.number().int().nonnegative();
 
@@ -36,16 +37,32 @@ function readLocale(formData: FormData): Locale {
   return localeValue;
 }
 
+async function authenticatedActionRuntime(locale: Locale) {
+  if (!hasRuntimeEnvironment(process.env)) actionFailed(locale);
+  const client = await createServerSupabaseClient();
+  try {
+    return {
+      ownerId: await requireUser(client, { locale, redirect: `/${locale}` }),
+      repository: getAuthenticatedRuntimeRepository(client),
+    };
+  } catch (error) {
+    if (error instanceof AuthRequiredError) actionFailed(locale);
+    throw error;
+  }
+}
+
 export async function createThreadAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
+  const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
   const result = await createThread(
     {
       goal: textValue(formData, "goal"),
       locale: localeValue,
       now: new Date().toISOString(),
+      owner_id: ownerId,
     },
     {
-      repository: getRuntimeRepository(),
+      repository,
       gateway: new RecordedAnalysisGateway(),
     },
   );
@@ -53,39 +70,31 @@ export async function createThreadAction(formData: FormData): Promise<void> {
   refreshWorkspace();
 }
 
-export async function startFreshAction(): Promise<void> {
-  await getRuntimeRepository().resetOwner(recordedFixtureOwnerId);
-  refreshWorkspace();
-}
-
-export async function resetDemoAction(): Promise<void> {
-  await resetDemo(getRuntimeRepository());
-  refreshWorkspace();
-}
-
 export async function taskAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
+  const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
   const kind = textValue(formData, "kind");
   const taskId = textValue(formData, "taskId");
   const base = {
-    owner_id: recordedFixtureOwnerId,
+    owner_id: ownerId,
     thread_id: textValue(formData, "threadId"),
     expected_version: version.data,
     now: new Date().toISOString(),
+    actor: { actor_type: "user", actor_user_id: ownerId },
   };
   let result: Awaited<ReturnType<typeof runTaskCommand>>;
   switch (kind) {
     case "add":
-      result = await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(repository, {
         ...base,
         kind,
         content: textValue(formData, "content"),
       });
       break;
     case "edit":
-      result = await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(repository, {
         ...base,
         kind,
         task_id: taskId,
@@ -95,7 +104,7 @@ export async function taskAction(formData: FormData): Promise<void> {
     case "transition": {
       const status = canonicalStatusSchema.safeParse(textValue(formData, "status"));
       if (!status.success) actionFailed(localeValue);
-      result = await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(repository, {
         ...base,
         kind,
         task_id: taskId,
@@ -105,7 +114,7 @@ export async function taskAction(formData: FormData): Promise<void> {
     }
     case "tombstone":
     case "restore":
-      result = await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(repository, {
         ...base,
         kind,
         task_id: taskId,
@@ -114,7 +123,7 @@ export async function taskAction(formData: FormData): Promise<void> {
     case "reorder": {
       const position = integerSchema.safeParse(textValue(formData, "position"));
       if (!position.success) actionFailed(localeValue);
-      result = await runTaskCommand(getRuntimeRepository(), {
+      result = await runTaskCommand(repository, {
         ...base,
         kind,
         task_id: taskId,
@@ -131,18 +140,20 @@ export async function taskAction(formData: FormData): Promise<void> {
 
 export async function evidenceAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
+  const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
   const result = await ingestNoteEvidence(
-    getRuntimeRepository(),
+    repository,
     new RecordedAnalysisGateway(),
     {
-      owner_id: recordedFixtureOwnerId,
+      owner_id: ownerId,
       thread_id: textValue(formData, "threadId"),
       note: textValue(formData, "note"),
       locale: localeValue,
       expected_version: version.data,
       now: new Date().toISOString(),
+      actor: { actor_type: "user", actor_user_id: ownerId },
     },
   );
   if (result.kind !== "applied") actionFailed(localeValue);
@@ -151,14 +162,16 @@ export async function evidenceAction(formData: FormData): Promise<void> {
 
 export async function confirmFactAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
+  const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
-  const result = await confirmFact(getRuntimeRepository(), {
-    owner_id: recordedFixtureOwnerId,
+  const result = await confirmFact(repository, {
+    owner_id: ownerId,
     thread_id: textValue(formData, "threadId"),
     fact_id: textValue(formData, "factId"),
     expected_version: version.data,
     now: new Date().toISOString(),
+    actor: { actor_type: "user", actor_user_id: ownerId },
   });
   if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
@@ -166,14 +179,16 @@ export async function confirmFactAction(formData: FormData): Promise<void> {
 
 export async function draftAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
+  const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
   const version = integerSchema.safeParse(textValue(formData, "version"));
   if (!version.success) actionFailed(localeValue);
-  const result = await generateDraft(getRuntimeRepository(), {
-    owner_id: recordedFixtureOwnerId,
+  const result = await generateDraft(repository, {
+    owner_id: ownerId,
     thread_id: textValue(formData, "threadId"),
     locale: localeValue,
     expected_version: version.data,
     now: new Date().toISOString(),
+    actor: { actor_type: "user", actor_user_id: ownerId },
   });
   if (result.kind !== "applied") actionFailed(localeValue);
   refreshWorkspace();
