@@ -47,9 +47,9 @@ export function createMcpToolHandlers(repository: ThreadRepository) {
     async propose_lifethread_update(input: ProposeInput) {
       const result = await proposeCandidate(repository, input.ownerId, input.candidate, new Date().toISOString());
       if (result.kind === "missing_thread") return { outcome: "missing_thread" as const, proposals: [], resulting_version: null };
-      if (result.kind === "rejected") return { outcome: result.reason as string, proposals: [], resulting_version: null };
+      if (result.kind === "rejected") return { outcome: result.reason as string, proposals: [], resulting_version: null, thread_id: input.candidate.thread_id };
       const proposals = result.aggregate.tasks.filter((task) => task.analysis_run_id === input.candidate.analysis_run_id && task.status === "proposed").map((task) => ({ id: task.id, kind: "task" as const, content: task.content }));
-      return { outcome: result.kind, proposals, resulting_version: result.aggregate.thread.version, web_url: `/en/threads/${result.aggregate.thread.id}` };
+      return { outcome: result.kind, proposals, resulting_version: result.aggregate.thread.version, thread_id: result.aggregate.thread.id, web_url: `/en/threads/${result.aggregate.thread.id}` };
     },
     async accept_lifethread_proposal(input: DecisionInput) {
       const result = await acceptProposal(repository, { ...input, now: new Date().toISOString() });
@@ -96,7 +96,7 @@ export function registerLifeThreadTools(server: McpServer): void {
     if (!authorized) return response({ outcome: "unauthorized" });
     return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId: input.threadId }));
   });
-  registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v1.html" } } }, async (input, extra) => {
+  registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v1.html" }, "openai/widgetAccessible": true } }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
     return response(await authorized.handlers.propose_lifethread_update({ ownerId: authorized.ownerId, candidate: input.candidate }));
