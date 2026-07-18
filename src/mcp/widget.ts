@@ -3,7 +3,7 @@ export const widgetHtml = `<!doctype html>
 :root{color-scheme:light;background:#f3f0e8;color:#1f2923;font:14px system-ui,sans-serif}body{margin:0;padding:16px}main{background:#fffdf8;border:1px solid #d8d4c9;border-radius:14px;padding:16px}h1{font-size:16px;margin:0 0 8px}p{color:#657068;line-height:1.45}.proposal{border-top:1px solid #e5e0d6;padding:12px 0}.proposal:first-child{border-top:0}.proposal p{margin:0 0 8px;color:#1f2923}button{background:#174f3b;border:0;border-radius:8px;color:white;min-height:40px;padding:0 14px;margin:4px 4px 0 0}button.secondary{background:#e4eee8;color:#174f3b}button:disabled{opacity:.55}#status{min-height:20px;margin-top:8px}
 </style></head><body><main><h1>LifeThread proposals</h1><p>Review the suggested changes in your web workspace. Nothing is confirmed automatically.</p><section id="proposals"></section><p id="status" role="status"></p></main><script>
 const host=window.openai;
-const output=host?.toolOutput||{};
+const output=host?.toolOutput?.structuredContent||host?.toolOutput||{};
 const proposals=Array.isArray(output.proposals)?output.proposals:[];
 const threadId=output.thread_id;
 const expectedVersion=output.resulting_version;

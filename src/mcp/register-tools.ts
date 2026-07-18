@@ -81,7 +81,7 @@ export function registerLifeThreadTools(server: McpServer): void {
   registerAppResource(
     server,
     "lifethread-proposals",
-    "ui://lifethread/proposals-v1.html",
+    "ui://lifethread/proposals-v2.html",
     { title: "LifeThread proposal review", description: "Compact proposal review controls", _meta: { ui: { csp: { connectDomains: [] } } } },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: RESOURCE_MIME_TYPE, text: widgetHtml }] }),
   );
@@ -96,7 +96,7 @@ export function registerLifeThreadTools(server: McpServer): void {
     if (!authorized) return response({ outcome: "unauthorized" });
     return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId: input.threadId }));
   });
-  registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v1.html" }, "openai/widgetAccessible": true } }, async (input, extra) => {
+  registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v2.html" }, "openai/widgetAccessible": true } }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
     return response(await authorized.handlers.propose_lifethread_update({ ownerId: authorized.ownerId, candidate: input.candidate }));
