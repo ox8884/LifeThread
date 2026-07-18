@@ -232,7 +232,7 @@ begin
   if v_revision_version is distinct from v_version then
     raise exception using errcode = '23514', message = 'Newest revision version does not match aggregate';
   end if;
-  if v_revision_previous_version is distinct from coalesce(p_expected_version, 0) then
+  if v_revision_previous_version is distinct from coalesce(p_expected_version, v_version - 1) then
     raise exception using errcode = '23514', message = 'Newest revision predecessor does not match expected version';
   end if;
 
