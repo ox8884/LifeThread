@@ -85,6 +85,13 @@ export function registerLifeThreadTools(server: McpServer): void {
     { title: "LifeThread proposal review", description: "Compact proposal review controls", _meta: { ui: { csp: { connectDomains: [] } } } },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: RESOURCE_MIME_TYPE, text: widgetHtml }] }),
   );
+  registerAppResource(
+    server,
+    "lifethread-proposals-legacy",
+    "ui://lifethread/proposals-v1.html",
+    { title: "LifeThread proposal review", description: "Compact proposal review controls", _meta: { ui: { csp: { connectDomains: [] } } } },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: RESOURCE_MIME_TYPE, text: widgetHtml }] }),
+  );
 
   server.registerTool("list_lifethreads", { title: "List LifeThreads", description: "List the authenticated user's LifeThreads.", inputSchema: listThreadsInputSchema, annotations: toolAnnotations.readOnly }, async (_input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
