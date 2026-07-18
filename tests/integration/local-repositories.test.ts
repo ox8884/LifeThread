@@ -41,6 +41,7 @@ describe("local persistence adapters", () => {
         version: 1,
         updated_at: "2026-07-15T12:01:00.000Z",
         review_count: 0,
+        progress: { completed: 0, total: 0, percent: 0 },
       },
       {
         id: "thread_fixture",
@@ -49,6 +50,7 @@ describe("local persistence adapters", () => {
         version: 1,
         updated_at: "2026-07-15T12:00:00.000Z",
         review_count: 0,
+        progress: { completed: 0, total: 0, percent: 0 },
       },
     ]);
     const otherOwnerId = "22222222-2222-4222-8222-222222222222";

@@ -7,6 +7,7 @@ export type ThreadSummary = Readonly<{
   version: number;
   updated_at: string;
   review_count: number;
+  progress?: Readonly<{ completed: number; total: number; percent: number }>;
 }>;
 
 export type SaveResult =

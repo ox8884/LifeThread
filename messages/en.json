@@ -78,6 +78,8 @@
   "tryAgain": "Try again",
   "demoStatus": "Private demo",
   "threadMenu": "Thread options",
+  "accountSignedIn": "Signed in",
+  "signOut": "Sign out",
   "activeThread": "In progress",
   "lastUpdated": "Updated today",
   "overallProgress": "Overall progress",

@@ -6,6 +6,7 @@ import type {
   ThreadSummary,
 } from "@/application/threads/thread-repository";
 import { ThreadOwnerMismatchError } from "@/application/threads/thread-repository";
+import { projectLivingState } from "@/application/state/project-living-state";
 import {
   lifeThreadAggregateSchema,
   type LifeThreadAggregate,
@@ -19,6 +20,7 @@ const threadSummarySchema = z.object({
   version: z.number().int().positive(),
   updated_at: z.string().datetime({ offset: true }),
   review_count: z.number().int().nonnegative(),
+  aggregate: lifeThreadAggregateSchema.optional(),
 }).strict();
 
 const aggregateRowSchema = z.object({
@@ -75,11 +77,19 @@ export class SupabaseThreadRepository implements ThreadRepository {
   async list(ownerId: string): Promise<readonly ThreadSummary[]> {
     const { data, error } = await this.#client
       .from("life_threads")
-      .select("id,title,goal_text,version,updated_at,review_count")
+      .select("id,title,goal_text,version,updated_at,review_count,aggregate")
       .eq("owner_id", ownerId)
       .order("updated_at", { ascending: false });
     throwRepositoryError("list", error);
-    return z.array(threadSummarySchema).parse(data);
+    return z.array(threadSummarySchema).parse(data).map((row) => ({
+      id: row.id,
+      title: row.title,
+      goal_text: row.goal_text,
+      version: row.version,
+      updated_at: row.updated_at,
+      review_count: row.review_count,
+      ...(row.aggregate ? { progress: projectLivingState(row.aggregate).progress } : {}),
+    }));
   }
 
   async load(

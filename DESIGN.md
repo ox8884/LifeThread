@@ -26,7 +26,7 @@ The next action remains above plan details at desktop, tablet, and phone widths.
 - Canvas: `#f3f0e8`; surface: `#fffdf8`; soft surface: `#f7f3e9`; inset: `#ece7dc`.
 - Ink: `#1f2923`; muted ink: `#657068`; quiet ink: `#8a918b`; border: `#d8d4c9`.
 - Action: `#174f3b`; hover: `#0f3f2e`; focus: `#4f806d`; action tint: `#e4eee8`.
-- Warm review: `#9b6428`; review tint: `#f7ead8`; danger: `#9f443c`; positive: `#247056`.
+- Warm review: `#9b6428`; review tint: `#f7ead8`; warning boundaries use the warm review token for readable tinted-surface separation; danger: `#9f443c`; positive: `#247056`.
 - Type: Geist Sans for interface text and Geist Mono only inside technical disclosure.
 - Radius: 8px controls, 14px primary surfaces, 10px secondary surfaces.
 - Spacing: 4px base with generous section separation and compact list rows.
@@ -34,7 +34,8 @@ The next action remains above plan details at desktop, tablet, and phone widths.
 
 ## 5. Named primitives and states
 
-- `WorkspaceHeader`: product identity, locale links, and private-demo disclosure.
+- `WorkspaceHeader`: product identity, locale links, account state, sign-out, and private-demo disclosure.
+- `ThreadCard`: independently addressable goal summary with review count, progress text, and a compact progress meter.
 - `ThreadOverview`: goal, current status, last update, and progress meter.
 - `NextActionCard`: `Now` label, one task, one primary `Done` control, help disclosure, and optional quick update.
 - `CandidateReview`: proposed tasks, unconfirmed facts, and unresolved conflicts excluding the current action.

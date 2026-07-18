@@ -61,14 +61,18 @@ export class LocalJsonThreadRepository implements ThreadRepository, ResettableTh
     const envelope = await this.read();
     return envelope.threads
       .filter((aggregate) => aggregate.thread.owner_id === ownerId)
-      .map((aggregate) => ({
-        id: aggregate.thread.id,
-        title: aggregate.thread.title,
-        goal_text: aggregate.thread.goal_text,
-        version: aggregate.thread.version,
-        updated_at: aggregate.thread.updated_at,
-        review_count: projectLivingState(aggregate).review_count,
-      }))
+      .map((aggregate) => {
+        const projection = projectLivingState(aggregate);
+        return {
+          id: aggregate.thread.id,
+          title: aggregate.thread.title,
+          goal_text: aggregate.thread.goal_text,
+          version: aggregate.thread.version,
+          updated_at: aggregate.thread.updated_at,
+          review_count: projection.review_count,
+          progress: projection.progress,
+        };
+      })
       .sort((left, right) => right.updated_at.localeCompare(left.updated_at));
   }
 

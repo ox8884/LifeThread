@@ -373,6 +373,11 @@ textarea {
   background: var(--action);
 }
 
+.header-menu-panel .account-label {
+  color: var(--action);
+  font-weight: 750;
+}
+
 .dashboard-main {
   width: min(calc(100% - 48px), var(--content-width));
   margin-inline: auto;
@@ -522,6 +527,39 @@ textarea {
   font-weight: 750;
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+.thread-card-progress {
+  display: grid;
+  gap: 7px;
+}
+
+.thread-card-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.thread-card-progress-label strong {
+  color: var(--ink);
+  font-weight: 720;
+}
+
+.thread-card-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--inset);
+}
+
+.thread-card-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--action);
 }
 
 .dashboard-empty {
@@ -691,6 +729,7 @@ textarea {
   height: 34px;
   place-items: center;
   border-radius: 999px;
+  border: 1px solid var(--warning);
   background: var(--warning-tint);
   color: var(--warning);
   font-size: 0.82rem;
@@ -772,7 +811,7 @@ textarea {
 }
 
 .badge.warning {
-  border-color: #e3c9a8;
+  border-color: var(--warning);
   background: var(--warning-tint);
   color: var(--warning);
 }

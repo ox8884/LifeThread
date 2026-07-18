@@ -37,6 +37,26 @@ export function ThreadCard({ locale, dictionary, summary }: ThreadCardProps) {
       </div>
       <h2>{summary.title}</h2>
       {supportingText ? <p>{supportingText}</p> : null}
+      {summary.progress ? (
+        <div
+          className="thread-card-progress"
+          aria-label={`${dictionary.overallProgress}: ${summary.progress.completed} / ${summary.progress.total}`}
+        >
+          <div className="thread-card-progress-label">
+            <span>{dictionary.overallProgress}</span>
+            <strong>{summary.progress.completed} / {summary.progress.total} {dictionary.completeLower}</strong>
+          </div>
+          <div
+            className="thread-card-progress-track"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={summary.progress.percent}
+          >
+            <span style={{ width: `${summary.progress.percent}%` }} />
+          </div>
+        </div>
+      ) : null}
       <div className="thread-card-meta">
         <span>{dictionary.threadCardUpdated} {formatUpdatedAt(summary.updated_at, locale)}</span>
         <span>{dictionary.threadCardRevision} {summary.version}</span>

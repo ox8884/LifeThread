@@ -78,6 +78,8 @@
   "tryAgain": "다시 시도",
   "demoStatus": "비공개 데모",
   "threadMenu": "스레드 옵션",
+  "accountSignedIn": "로그인됨",
+  "signOut": "로그아웃",
   "activeThread": "진행 중",
   "lastUpdated": "오늘 업데이트",
   "overallProgress": "전체 진행률",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signOutAction } from "@/app/[locale]/actions";
 import type { Dictionary, Locale } from "@/i18n/locales";
 import { otherLocale } from "@/i18n/locales";
 
@@ -24,9 +25,14 @@ export function WorkspaceHeader({ locale, dictionary }: WorkspaceHeaderProps) {
         <details className="header-menu">
           <summary aria-label={dictionary.threadMenu}>•••</summary>
           <div className="header-menu-panel">
+            <p className="account-label">{dictionary.accountSignedIn}</p>
             <p>{dictionary.demoLabel}</p>
             <p>{dictionary.privacyLabel}</p>
             <p>{dictionary.sendingLabel}</p>
+            <form action={signOutAction}>
+              <input type="hidden" name="locale" value={locale} />
+              <button className="button quiet" type="submit">{dictionary.signOut}</button>
+            </form>
           </div>
         </details>
       </div>

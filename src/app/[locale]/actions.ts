@@ -51,6 +51,16 @@ async function authenticatedActionRuntime(locale: Locale) {
   }
 }
 
+export async function signOutAction(formData: FormData): Promise<void> {
+  const localeValue = readLocale(formData);
+  if (!hasRuntimeEnvironment(process.env)) {
+    redirect(`/${localeValue}/sign-in?redirect=${encodeURIComponent(`/${localeValue}`)}`);
+  }
+  const client = await createServerSupabaseClient();
+  await client.auth.signOut();
+  redirect(`/${localeValue}/sign-in?redirect=${encodeURIComponent(`/${localeValue}`)}`);
+}
+
 export async function createThreadAction(formData: FormData): Promise<void> {
   const localeValue = readLocale(formData);
   const { ownerId, repository } = await authenticatedActionRuntime(localeValue);
