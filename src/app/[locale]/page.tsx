@@ -45,6 +45,7 @@ export default async function LocalePage({ params, searchParams }: LocalePagePro
       locale={locale}
       dictionary={dictionary}
       summaries={summaries}
+      ownerId={ownerId}
       actionError={hasActionError(actionErrorValue)}
       createAction={createThreadAction}
     />

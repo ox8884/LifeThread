@@ -1,5 +1,6 @@
 import type { ThreadSummary } from "@/application/threads/thread-repository";
 import { NewThreadForm } from "@/components/threads/new-thread-form";
+import { RealtimeThreadSync } from "@/components/threads/realtime-thread-sync";
 import { ThreadCard } from "@/components/threads/thread-card";
 import { WorkspaceHeader } from "@/components/threads/workspace-header";
 import type { Dictionary, Locale } from "@/i18n/locales";
@@ -8,6 +9,7 @@ type ThreadDashboardProps = Readonly<{
   locale: Locale;
   dictionary: Dictionary;
   summaries: readonly ThreadSummary[];
+  ownerId?: string;
   actionError: boolean;
   createAction: (formData: FormData) => Promise<void>;
 }>;
@@ -20,6 +22,7 @@ export function ThreadDashboard({
   locale,
   dictionary,
   summaries,
+  ownerId,
   actionError,
   createAction,
 }: ThreadDashboardProps) {
@@ -41,6 +44,7 @@ export function ThreadDashboard({
             <h1>{dictionary.dashboardTitle}</h1>
             <p className="lede">{dictionary.dashboardLede}</p>
           </div>
+          <RealtimeThreadSync ownerId={ownerId} />
           <div
             className="dashboard-count"
             aria-label={formatGoalCount(summaries.length, locale, dictionary.dashboardCountLabel)}
