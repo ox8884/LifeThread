@@ -1,6 +1,7 @@
 import { projectLivingState } from "@/application/state/project-living-state";
 import { TaskList } from "@/components/tasks/task-list";
 import { CandidateReview } from "@/components/threads/candidate-review";
+import { ChatGptSuggestionLink } from "@/components/threads/chatgpt-suggestion-link";
 import { NextActionCard } from "@/components/threads/next-action-card";
 import { ThreadDetails } from "@/components/threads/thread-details";
 import { ThreadOverview } from "@/components/threads/thread-overview";
@@ -38,6 +39,7 @@ export function Workspace({ aggregate, locale, dictionary, actionError }: Worksp
       </p>
       <main className="workspace-main">
         <ThreadOverview aggregate={aggregate} projection={projection} dictionary={dictionary} />
+        <ChatGptSuggestionLink threadId={aggregate.thread.id} locale={locale} dictionary={dictionary} />
         <section className="action-grid">
           <NextActionCard
             nextAction={projection.next_action}

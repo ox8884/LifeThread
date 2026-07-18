@@ -1007,6 +1007,36 @@ textarea {
   grid-template-rows: auto 1fr;
 }
 
+.chatgpt-suggestion-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 0 18px;
+  border: 1px solid color-mix(in srgb, var(--action) 20%, var(--border));
+  border-radius: 10px;
+  background: var(--surface-soft);
+  padding: 16px 18px;
+}
+
+.chatgpt-suggestion-link h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.025em;
+}
+
+.chatgpt-suggestion-link p:not(.section-kicker) {
+  max-width: 680px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.chatgpt-suggestion-link .button {
+  flex: 0 0 auto;
+}
+
 .auth-shell {
   display: grid;
   min-height: 100dvh;
@@ -1397,6 +1427,17 @@ textarea {
   .next-action-card {
     border-radius: 10px;
     padding: 16px;
+  }
+
+  .chatgpt-suggestion-link {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chatgpt-suggestion-link .button {
+    width: 100%;
+    text-align: center;
   }
 
   .inline-form {

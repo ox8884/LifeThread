@@ -88,7 +88,7 @@ describe("authenticated Supabase persistence contract", () => {
     expect(saveFunction).toContain("v_revision_thread_id is distinct from p_thread_id");
     expect(saveFunction).toContain("v_revision_version is distinct from v_version");
     expect(saveFunction).toContain(
-      "v_revision_previous_version is distinct from coalesce(p_expected_version, 0)",
+      "v_revision_previous_version is distinct from coalesce(p_expected_version, v_version - 1)",
     );
     expect(saveFunction).toContain("revision identity conflicts with persisted revision");
     expect(revisionSection).not.toContain("on conflict (owner_id, thread_id, id) do nothing");

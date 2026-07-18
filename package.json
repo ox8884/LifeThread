@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:integration": "tsx scripts/integration/run.ts",
     "test:e2e": "playwright test",
+    "mcp:smoke": "tsx scripts/mcp/smoke.ts",
     "qa:capture": "tsx scripts/qa/capture.ts",
     "demo:preflight": "tsx scripts/demo/preflight.ts",
     "demo:reset": "tsx scripts/demo/reset.ts",
@@ -21,8 +22,11 @@
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
+    "@modelcontextprotocol/ext-apps": "0.4.2",
+    "@modelcontextprotocol/sdk": "1.26.0",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "2.110.6",
+    "mcp-handler": "1.1.0",
     "next": "16.2.10",
     "next-intl": "4.13.2",
     "react": "19.2.4",
