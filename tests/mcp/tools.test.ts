@@ -56,7 +56,7 @@ describe("LifeThread MCP tools", () => {
   });
 
   it("requires current version for explicit proposal decisions", async () => {
-    const { handlers } = await createHandlers();
+    const { handlers, repository } = await createHandlers();
     const first = await handlers.propose_lifethread_update({
       ownerId: USER_ID,
       candidate: createCandidateFixture(),
@@ -77,5 +77,8 @@ describe("LifeThread MCP tools", () => {
       proposalId,
       expectedVersion: 2,
     })).resolves.toMatchObject({ outcome: "rejected" });
+
+    const afterReject = await getThread(repository, USER_ID, "thread_fixture");
+    expect(afterReject?.tasks.find((task) => task.id === proposalId)?.deleted_at).not.toBeNull();
   });
 });

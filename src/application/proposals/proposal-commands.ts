@@ -53,9 +53,8 @@ export async function rejectProposal(
     expected_version: input.expectedVersion,
     now: input.now,
     actor: { actor_type: "user", actor_user_id: input.ownerId },
-    kind: "transition",
+    kind: "tombstone",
     task_id: input.proposalId,
-    status: "rejected",
   });
   return result.kind === "applied" ? result : { kind: "stale_version" };
 }
