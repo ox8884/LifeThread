@@ -1,0 +1,11 @@
+LifeThread Realtime manual QA
+Tree under test: 64cf9ab
+Surface: http://localhost:3000/en
+
+Given: two authenticated browser contexts, A and B, both opened on the same owner dashboard
+Initial B: Live sync connected; thread_aa01b77cb22f3376 showed Revision 4 and Overall progress 1 / 3.
+When: context A completed the current task through the real Done button, changing the same thread to revision 5 and progress 2 / 3.
+Then: context B updated without reload to Revision 5 and Overall progress 2 / 3.
+
+Edge coverage: the component test also renders an empty owner-scoped dashboard and keeps the Create living thread action visible.
+Security observation: Realtime is subscribed without a client owner filter; Supabase RLS remains the owner boundary.

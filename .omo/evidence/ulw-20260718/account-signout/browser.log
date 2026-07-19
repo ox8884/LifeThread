@@ -1,0 +1,11 @@
+LifeThread auth manual QA
+Tree under test: 64cf9ab
+Surface: http://localhost:3000/en
+
+Given: an authenticated Supabase browser session
+When: Thread options -> Sign out
+Then: browser navigated to http://127.0.0.1:3000/en/sign-in?redirect=%2Fen
+Observed: Sign in heading and Email, Password, Sign in, and Continue with Google controls were visible.
+
+Recovery: Google OAuth with the previously connected account on the registered localhost callback returned to http://localhost:3000/en.
+Observed after recovery: Live sync connected and three owner-scoped goals rendered.
