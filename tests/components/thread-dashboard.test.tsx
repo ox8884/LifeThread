@@ -143,7 +143,6 @@ describe("ThreadDashboard", () => {
         event: "*",
         schema: "public",
         table: "life_threads",
-        filter: "owner_id=eq.owner-1",
       },
       expect.any(Function),
     );

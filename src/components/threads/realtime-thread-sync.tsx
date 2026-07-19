@@ -66,7 +66,6 @@ function ActiveRealtimeThreadSync({ ownerId }: ActiveRealtimeThreadSyncProps) {
           event: "*",
           schema: "public",
           table: "life_threads",
-          filter: `owner_id=eq.${ownerId}`,
         },
         () => router.refresh(),
       )
