@@ -18,7 +18,7 @@
   "currentThread": "Current thread",
   "chatgptEyebrow": "Optional external help",
   "chatgptTitle": "Ask ChatGPT for a cited suggestion",
-  "chatgptBody": "ChatGPT opens separately. Run the connected LifeThread app there, then review the proposal here when live sync updates this page.",
+  "chatgptBody": "ChatGPT opens separately. Select + → More → LifeThread if it is not already active, then review the proposal here when live sync updates this page.",
   "chatgptAction": "Get suggestions with ChatGPT",
   "dashboardEyebrow": "Private goal workspace",
   "dashboardTitle": "Your living goals",

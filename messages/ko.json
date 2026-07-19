@@ -18,7 +18,7 @@
   "currentThread": "현재 스레드",
   "chatgptEyebrow": "선택 가능한 외부 도움",
   "chatgptTitle": "ChatGPT에게 근거 있는 제안 받기",
-  "chatgptBody": "ChatGPT가 별도로 열립니다. 연결된 LifeThread 앱을 실행한 뒤, 이 페이지에서 실시간으로 들어온 제안을 검토하세요.",
+  "chatgptBody": "ChatGPT가 별도로 열립니다. LifeThread가 활성화되어 있지 않으면 + 메뉴 → More → LifeThread를 선택한 뒤, 이 페이지에서 실시간으로 들어온 제안을 검토하세요.",
   "chatgptAction": "ChatGPT로 제안 받기",
   "dashboardEyebrow": "비공개 목표 작업공간",
   "dashboardTitle": "살아 있는 목표",
