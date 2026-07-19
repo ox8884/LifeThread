@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "createdAt": "2026-07-18T16:48:59.932Z",
+  "updatedAt": "2026-07-18T19:36:00.000Z",
+  "briefPath": ".omo/ulw-loop/lifethread-20260718/brief.md",
+  "goalsPath": ".omo/ulw-loop/lifethread-20260718/goals.json",
+  "ledgerPath": ".omo/ulw-loop/lifethread-20260718/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-continue-lifethread-from-commit-890e",
+      "title": "Continue LifeThread from commit 890e237 on codex/free-chatgpt-sync. P...",
+      "objective": "Continue LifeThread from commit 890e237 on codex/free-chatgpt-sync. Preserve Supabase auth, secrets, the main checkout, and the user-owned project markdown. Validate the landed account/sign-out and dashboard-card progress behavior when a live authenticated session exists. Then implement and verify Supabase Realtime/refetch behavior for authenticated multi-goal changes without paid API requirements. Use failing-first proofs, delegate edits and QA, capture current-tree evidence and cleanup receipts, commit and push each verified unit. Stop when this goal's criteria have current-tree evidence and cleanup receipts, or when the user reports quota exhaustion.",
+      "status": "complete",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "Browser auth happy path: use Playwright on http://127.0.0.1:3000/en with an authenticated Supabase session, click Thread options then Sign out, and assert URL /en/sign-in plus a protected /en redirect.",
+          "userModel": "happy",
+          "expectedEvidence": ".omo/evidence/ulw-20260718/account-signout/browser.log and screenshot.png with cleanup receipt.",
+          "capturedEvidence": ".omo/evidence/ulw-20260718/account-signout/browser.log @tree:a9a4912 | cleanup: browser QA completed; no tokens or storage state persisted",
+          "status": "pass",
+          "capturedAt": "2026-07-18T19:36:00.000Z",
+          "notes": "Authenticated sign-out redirected to the locale-aware sign-in page; Google OAuth recovery returned to the registered localhost callback."
+        },
+        {
+          "id": "C002",
+          "scenario": "Browser Realtime edge path: open two authenticated contexts, mutate a goal in context A, and assert context B updates without reload; also assert empty goal list remains usable.",
+          "userModel": "edge",
+          "expectedEvidence": ".omo/evidence/ulw-20260718/realtime/browser.log and screenshots with cleanup receipt.",
+          "capturedEvidence": ".omo/evidence/ulw-20260718/realtime/browser.log @tree:a9a4912 | cleanup: browser QA completed; no tokens or storage state persisted",
+          "status": "pass",
+          "capturedAt": "2026-07-18T19:36:00.000Z",
+          "notes": "Two authenticated contexts were observed; context B refreshed from revision 4 / 1 of 3 to revision 5 / 2 of 3 without reload. Empty dashboard usability remains covered by the component test."
+        },
+        {
+          "id": "C003",
+          "scenario": "Regression suite: pnpm test, pnpm typecheck, pnpm lint, and pnpm build from the current worktree; all commands exit 0 and no existing E2E tests are skipped by this turn.",
+          "userModel": "regression",
+          "expectedEvidence": ".omo/evidence/ulw-20260718/regression/command.log with exit codes and current tree.",
+          "capturedEvidence": ".omo/evidence/ulw-20260718/regression/command-current.log @tree:c6bfaf1 | commit:9b83c109 | cleanup: build completed; no server started",
+          "status": "pass",
+          "capturedAt": "2026-07-18T19:36:00.000Z",
+          "notes": "Current tree a9a4912 passed 18 files/85 tests, typecheck, lint, and build. Browser auth and Realtime evidence are recorded separately."
+        }
+      ],
+      "attempt": 0,
+      "createdAt": "2026-07-18T16:48:59.932Z",
+      "updatedAt": "2026-07-18T19:36:00.000Z"
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/lifethread-20260718/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/lifethread-20260718/ledger.jsonl as the audit trail."
+}
