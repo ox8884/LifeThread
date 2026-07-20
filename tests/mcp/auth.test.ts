@@ -20,7 +20,14 @@ describe("MCP authentication boundary", () => {
   });
 
   it("uses the snake_case field names that ChatGPT sends for LifeThread identifiers", () => {
-    expect(Object.keys(getThreadInputSchema)).toEqual(["thread_id"]);
-    expect(Object.keys(decisionInputSchema)).toEqual(["thread_id", "proposal_id", "expected_version"]);
+    expect(Object.keys(getThreadInputSchema)).toEqual(["thread_id", "threadId"]);
+    expect(Object.keys(decisionInputSchema)).toEqual([
+      "thread_id",
+      "threadId",
+      "proposal_id",
+      "proposalId",
+      "expected_version",
+      "expectedVersion",
+    ]);
   });
 });

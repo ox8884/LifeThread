@@ -19,6 +19,10 @@ type GetInput = Readonly<{ ownerId: string; threadId: string }>;
 type ProposeInput = Readonly<{ ownerId: string; candidate: CandidateDelta }>;
 type DecisionInput = Readonly<{ ownerId: string; threadId: string; proposalId: string; expectedVersion: number }>;
 
+function inputValue<T>(canonical: T | undefined, legacy: T | undefined): T | undefined {
+  return canonical ?? legacy;
+}
+
 function compactThread(aggregate: NonNullable<Awaited<ReturnType<typeof getThread>>>) {
   return {
     id: aggregate.thread.id,
@@ -101,7 +105,9 @@ export function registerLifeThreadTools(server: McpServer): void {
   server.registerTool("get_lifethread", { title: "Get a LifeThread", description: "Read the authenticated user's minimal current LifeThread state.", inputSchema: getThreadInputSchema, annotations: toolAnnotations.readOnly }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
-    return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId: input.thread_id }));
+    const threadId = inputValue(input.thread_id, input.threadId);
+    if (!threadId) return response({ outcome: "invalid_input", message: "thread_id is required" });
+    return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId }));
   });
   registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v2.html" }, "openai/widgetAccessible": true } }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
@@ -111,21 +117,33 @@ export function registerLifeThreadTools(server: McpServer): void {
   server.registerTool("accept_lifethread_proposal", { title: "Accept a LifeThread proposal", description: "Explicitly accept one current proposal at the supplied version.", inputSchema: decisionInputSchema, annotations: toolAnnotations.write }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
+    const threadId = inputValue(input.thread_id, input.threadId);
+    const proposalId = inputValue(input.proposal_id, input.proposalId);
+    const expectedVersion = inputValue(input.expected_version, input.expectedVersion);
+    if (!threadId || !proposalId || expectedVersion === undefined) {
+      return response({ outcome: "invalid_input", message: "thread_id, proposal_id, and expected_version are required" });
+    }
     return response(await authorized.handlers.accept_lifethread_proposal({
       ownerId: authorized.ownerId,
-      threadId: input.thread_id,
-      proposalId: input.proposal_id,
-      expectedVersion: input.expected_version,
+      threadId,
+      proposalId,
+      expectedVersion,
     }));
   });
   server.registerTool("reject_lifethread_proposal", { title: "Reject a LifeThread proposal", description: "Reversibly reject one current proposal at the supplied version.", inputSchema: decisionInputSchema, annotations: toolAnnotations.reject }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
+    const threadId = inputValue(input.thread_id, input.threadId);
+    const proposalId = inputValue(input.proposal_id, input.proposalId);
+    const expectedVersion = inputValue(input.expected_version, input.expectedVersion);
+    if (!threadId || !proposalId || expectedVersion === undefined) {
+      return response({ outcome: "invalid_input", message: "thread_id, proposal_id, and expected_version are required" });
+    }
     return response(await authorized.handlers.reject_lifethread_proposal({
       ownerId: authorized.ownerId,
-      threadId: input.thread_id,
-      proposalId: input.proposal_id,
-      expectedVersion: input.expected_version,
+      threadId,
+      proposalId,
+      expectedVersion,
     }));
   });
 }
