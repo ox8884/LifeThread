@@ -37,7 +37,7 @@ for (const scriptName of [
   "test:e2e",
   "demo:preflight",
   "demo:reset",
-  "ai:smoke",
+  "mcp:smoke",
 ]) {
   if (!packageJson.scripts?.[scriptName]) failures.push(`missing-script:${scriptName}`);
 }

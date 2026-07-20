@@ -1,6 +1,6 @@
 # LifeThread Three-Minute Demo Plan
 
-Status: planned; demo is not yet runnable
+Status: rehearsal-ready in recorded-fixture mode; live ChatGPT connector proof remains an interactive production-account step
 
 ## 13. Three-minute demo
 
@@ -34,7 +34,7 @@ Target rehearsal time is at most 170 seconds, leaving ten seconds for UI latency
 
 ## Preflight and failure path
 
-Before the live run, `pnpm demo:preflight` verifies required environment variables, Supabase reachability/migrations/private bucket, OpenAI configuration, seed/reset status, both locale dictionaries, and browser viewport. Missing requirements fail with a named remediation and no partial “ready” message.
+Before the recorded rehearsal, `pnpm demo:preflight` verifies the local adapter, seed/reset status, both locale dictionaries, and browser viewport. For the live ChatGPT segment, the presenter must also connect LifeThread in ChatGPT Developer Mode and select it with `+` → `More` if it is not already active. Missing requirements fail with a named remediation and no partial “ready” message.
 
 If a live model call fails, the UI shows a localized retry/review state and preserves the previous canonical revision. The presenter does not switch to an unlabeled cached response. If the demo explicitly runs in recorded mode, a persistent “Recorded AI fixture” label must be visible.
 
@@ -51,4 +51,4 @@ If a live model call fails, the UI shows a localized retry/review state and pres
 
 ## What it does not claim
 
-Production authentication, multi-user isolation, public sharing, background processing, external email/calendar delivery, mobile support, or production-scale reliability.
+Live ChatGPT account proof, multi-user isolation beyond owner-scoped authentication, public sharing, background processing, external email/calendar delivery, or production-scale reliability.

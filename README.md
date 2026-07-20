@@ -3,7 +3,7 @@ LifeThread is a general-purpose, bilingual AI life-management application that t
 
 ## Current repository state
 
-This repository contains a working local MVP vertical slice. The bilingual workspace, domain/revision engine, deterministic CandidateDelta reconciliation, private local evidence adapter, demo reset/preflight, and responsive browser journey are implemented and verified. Supabase/OpenAI live adapters are present behind fail-fast boundaries and require credentials to activate.
+This repository contains a working bilingual MVP with authenticated multi-goal storage, deterministic CandidateDelta reconciliation, private evidence handling, demo reset/preflight, responsive browser coverage, and a protected MCP connector for ChatGPT. The normal AI proposal path uses the user's ChatGPT account through the connected LifeThread app; it does not require an OpenAI API key. Local recorded fixtures remain available for deterministic development and tests.
 
 Approved hackathon defaults:
 
@@ -11,7 +11,7 @@ Approved hackathon defaults:
 - One clearly labeled `demo_user` profile with no public sharing.
 - A 2-3 day implementation timebox.
 - A Next.js App Router TypeScript modular monolith.
-- GPT-5.6 strict structured candidate deltas reconciled by deterministic application code.
+- ChatGPT Developer Mode with strict structured candidate deltas reconciled by deterministic application code.
 - One canonical LifeThread projected in English or Korean.
 
 ## Product promise
@@ -33,14 +33,14 @@ A user supplies an arbitrary goal, not a category. LifeThread proposes a tentati
 
 ## Scope boundaries
 
-The MVP does not include public sharing, production-grade authentication, collaboration, external email/calendar actions, background queues, a template library, multiple scenario-specific paths, additional languages, or hidden mocks. Original evidence remains private; AI output cannot directly mutate canonical confirmed state.
+The MVP does not include public sharing, collaboration, external email/calendar actions, background queues, a template library, multiple scenario-specific paths, or additional languages. Original evidence remains private; AI output cannot directly mutate canonical confirmed state.
 
 ## Verification
 
-- `pnpm lint`, `pnpm typecheck`, `pnpm test` (29 tests), `pnpm test:integration`, and `pnpm build` pass.
-- `pnpm test:e2e` passes across desktop, mobile, and tablet (6 tests).
-- `pnpm demo:preflight`, `pnpm demo:reset`, and `pnpm acceptance:audit` pass.
-- Full evidence is recorded in `.omo/evidence/final-verification/summary.md`.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test` (86 tests), `pnpm test:integration` (28 tests), and `pnpm build` pass.
+- `pnpm test:e2e` passes the authenticated boundary suite across desktop, mobile, and tablet (15 passed; 9 demo-account journeys skip without saved demo credentials).
+- `pnpm demo:preflight`, two consecutive `pnpm demo:reset` runs, `pnpm acceptance:audit`, and local `pnpm mcp:smoke` pass.
+- The current verification record is maintained in `.omo/evidence/final-verification/summary.md`.
 
-Live Supabase integration requires `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; live GPT smoke requires `OPENAI_API_KEY`. Missing live credentials fail fast without affecting deterministic local tests.
+The ChatGPT connector requires a user to connect LifeThread in ChatGPT Developer Mode and select it with `+` → `More` when needed. A generic browser link cannot silently activate an app. Local deterministic tests do not require a ChatGPT or OpenAI API credential.
 

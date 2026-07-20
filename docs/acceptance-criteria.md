@@ -65,7 +65,7 @@ The implementation is accepted only when all commands exit zero and evidence is 
 - `pnpm test:e2e`
 - `pnpm demo:preflight`
 - `pnpm demo:reset`
-- `pnpm ai:smoke` with live GPT-5.6 credentials; it must fail fast when credentials are absent, call the Responses API, validate and reconcile one CandidateDelta, and record metadata only without raw user content.
+- `pnpm mcp:smoke` against the protected MCP endpoint; it must verify the OAuth challenge and protected-resource metadata. Live ChatGPT proposal generation remains an interactive Developer Mode test because it uses the user's ChatGPT subscription rather than an OpenAI API key.
 - Playwright three-minute journey, four-domain journey, locale round trip, conflict protection, private-file rejection, and failure-state journeys
 
 No suite may silently skip because credentials are missing. Unit/fixture tests remain deterministic; live integration/demo commands fail fast with named missing prerequisites.
