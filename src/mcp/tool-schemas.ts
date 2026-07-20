@@ -2,12 +2,12 @@ import { z } from "zod";
 import { candidateDeltaSchema } from "@/domain/candidate-delta";
 
 export const listThreadsInputSchema = {};
-export const getThreadInputSchema = { threadId: z.string().min(1) };
+export const getThreadInputSchema = { thread_id: z.string().min(1) };
 export const proposeInputSchema = { candidate: candidateDeltaSchema };
 export const decisionInputSchema = {
-  threadId: z.string().min(1),
-  proposalId: z.string().min(1),
-  expectedVersion: z.number().int().positive(),
+  thread_id: z.string().min(1),
+  proposal_id: z.string().min(1),
+  expected_version: z.number().int().positive(),
 };
 
 export const toolAnnotations = {

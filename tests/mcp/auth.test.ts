@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMcpAuthChallenge, parseBearerToken } from "@/mcp/auth";
+import { decisionInputSchema, getThreadInputSchema } from "@/mcp/tool-schemas";
 
 describe("MCP authentication boundary", () => {
   it("extracts exactly one bearer token and rejects other schemes", () => {
@@ -16,5 +17,10 @@ describe("MCP authentication boundary", () => {
     expect(response.headers.get("www-authenticate")).toContain("resource_metadata=");
     expect(response.headers.get("www-authenticate")).toContain("https://lifethread.example/.well-known/oauth-protected-resource");
     expect(response.headers.get("content-type")).toContain("application/json");
+  });
+
+  it("uses the snake_case field names that ChatGPT sends for LifeThread identifiers", () => {
+    expect(Object.keys(getThreadInputSchema)).toEqual(["thread_id"]);
+    expect(Object.keys(decisionInputSchema)).toEqual(["thread_id", "proposal_id", "expected_version"]);
   });
 });

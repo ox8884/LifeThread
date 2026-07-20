@@ -101,7 +101,7 @@ export function registerLifeThreadTools(server: McpServer): void {
   server.registerTool("get_lifethread", { title: "Get a LifeThread", description: "Read the authenticated user's minimal current LifeThread state.", inputSchema: getThreadInputSchema, annotations: toolAnnotations.readOnly }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
-    return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId: input.threadId }));
+    return response(await authorized.handlers.get_lifethread({ ownerId: authorized.ownerId, threadId: input.thread_id }));
   });
   registerAppTool(server, "propose_lifethread_update", { title: "Propose a LifeThread update", description: "Submit a cited, reviewable CandidateDelta. It cannot complete or confirm anything.", inputSchema: proposeInputSchema, annotations: toolAnnotations.write, _meta: { ui: { resourceUri: "ui://lifethread/proposals-v2.html" }, "openai/widgetAccessible": true } }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
@@ -111,11 +111,21 @@ export function registerLifeThreadTools(server: McpServer): void {
   server.registerTool("accept_lifethread_proposal", { title: "Accept a LifeThread proposal", description: "Explicitly accept one current proposal at the supplied version.", inputSchema: decisionInputSchema, annotations: toolAnnotations.write }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
-    return response(await authorized.handlers.accept_lifethread_proposal({ ownerId: authorized.ownerId, ...input }));
+    return response(await authorized.handlers.accept_lifethread_proposal({
+      ownerId: authorized.ownerId,
+      threadId: input.thread_id,
+      proposalId: input.proposal_id,
+      expectedVersion: input.expected_version,
+    }));
   });
   server.registerTool("reject_lifethread_proposal", { title: "Reject a LifeThread proposal", description: "Reversibly reject one current proposal at the supplied version.", inputSchema: decisionInputSchema, annotations: toolAnnotations.reject }, async (input, extra) => {
     const authorized = authorizedHandlers(extra.authInfo);
     if (!authorized) return response({ outcome: "unauthorized" });
-    return response(await authorized.handlers.reject_lifethread_proposal({ ownerId: authorized.ownerId, ...input }));
+    return response(await authorized.handlers.reject_lifethread_proposal({
+      ownerId: authorized.ownerId,
+      threadId: input.thread_id,
+      proposalId: input.proposal_id,
+      expectedVersion: input.expected_version,
+    }));
   });
 }

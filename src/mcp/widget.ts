@@ -20,7 +20,7 @@ for(const proposal of proposals){
       for(const sibling of item.querySelectorAll('button'))sibling.disabled=true;
       status.textContent=action==='accept'?'Accepting…':'Rejecting…';
       try{
-        const result=await host.callTool(action==='accept'?'accept_lifethread_proposal':'reject_lifethread_proposal',{threadId,proposalId:proposal.id,expectedVersion});
+        const result=await host.callTool(action==='accept'?'accept_lifethread_proposal':'reject_lifethread_proposal',{thread_id:threadId,proposal_id:proposal.id,expected_version:expectedVersion});
         const outcome=result?.structuredContent?.outcome||result?.outcome;
         status.textContent=outcome==='accepted'?'Accepted.':outcome==='rejected'?'Rejected.':('Result: '+(outcome||'updated'));
       }catch(error){status.textContent='Could not update this proposal. Please retry from the workspace.';for(const sibling of item.querySelectorAll('button'))sibling.disabled=false;}
